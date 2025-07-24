@@ -1,0 +1,49 @@
+services:
+  # PostgreSQL Database for metadata and document storage
+  - type: pserv
+    name: vext-rag-database
+    plan: free
+    ipAllowList: []
+    maxConnections: 10
+
+  # Vext RAG System API
+  - type: web
+    name: vext-rag-api
+    env: node
+    plan: free
+    buildCommand: npm ci --only=production
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: CHUNK_SIZE
+        value: 1000
+      - key: CHUNK_OVERLAP
+        value: 200
+      - key: OCR_MODEL
+        value: mistral-ocr-latest
+      - key: OCR_INCLUDE_IMAGES
+        value: false
+      - key: OCR_MAX_FILE_SIZE
+        value: 52428800
+      - key: OCR_MAX_PAGES
+        value: 1000
+      - key: AI_MODEL
+        value: gpt-4o-mini
+      - key: AI_TEMPERATURE
+        value: 0.7
+      - key: AI_MAX_TOKENS
+        value: 1000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vext-rag-database
+          property: connectionString
+    secrets:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: MISTRAL_API_KEY
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true 

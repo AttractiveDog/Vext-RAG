@@ -5,7 +5,7 @@ import vextService from './vextService.js';
 class VectorService {
   constructor() {
     this.client = new ChromaClient({
-      path: process.env.CHROMA_URL || 'http://localhost:8000'
+      path: process.env.CHROMA_URL || 'http://3.6.147.238:8000'
     });
     this.collection = null;
     this.collectionName = 'vext_rag_documents';

@@ -67,7 +67,7 @@ OPENAI_API_KEY=your_openai_api_key_here
 PORT=3000
 
 # Vector Database Configuration
-CHROMA_URL=http://localhost:8000
+CHROMA_URL=http://3.6.147.238:8000
 
 # Document Processing Configuration
 CHUNK_SIZE=1000
@@ -255,7 +255,7 @@ The system can be configured through environment variables:
 ### Required Configuration
 - `OPENAI_API_KEY`: Your OpenAI API key for embeddings and text generation
 - `PORT`: Server port (default: 3000)
-- `CHROMA_URL`: ChromaDB connection URL (default: http://localhost:8000)
+- `CHROMA_URL`: ChromaDB connection URL (default: http://3.6.147.238:8000)
 
 ### Document Processing
 - `CHUNK_SIZE`: Document chunk size in characters (default: 1000)

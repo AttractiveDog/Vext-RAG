@@ -183,7 +183,7 @@ async function main() {
     console.log('  CHUNK_SIZE        Size of text chunks (default: 1000)');
     console.log('  CHUNK_OVERLAP     Overlap between chunks (default: 200)');
     console.log('  OPENAI_API_KEY    OpenAI API key for embeddings');
-    console.log('  CHROMA_URL        ChromaDB URL (default: http://localhost:8000)');
+    console.log('  CHROMA_URL        ChromaDB URL (default: http://3.6.147.238:8000)');
     process.exit(0);
   }
 
