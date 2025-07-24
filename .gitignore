@@ -111,7 +111,7 @@ Thumbs.db
 
 # Application specific
 uploads/
-data/
+
 *.pdf
 *.docx
 *.txt
