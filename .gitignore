@@ -112,11 +112,8 @@ Thumbs.db
 # Application specific
 uploads/
 
-*.pdf
-*.docx
-*.txt
-*.html
-*.htm
+
+
 
 # Docker
 .dockerignore
