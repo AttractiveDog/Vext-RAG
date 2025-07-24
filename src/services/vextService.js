@@ -32,18 +32,37 @@ class VextService {
       console.log(`Generating embeddings for ${texts.length} text chunks...`);
       
       const openai = this._initOpenAI();
-      const response = await openai.embeddings.create({
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`Embedding generation timed out after 60 seconds for batch of ${texts.length} texts`));
+        }, 60000); // 60 second timeout
+      });
+      
+      const embeddingPromise = openai.embeddings.create({
         model: 'text-embedding-ada-002',
         input: texts
       });
-
+      
+      const response = await Promise.race([embeddingPromise, timeoutPromise]);
       const embeddings = response.data.map(item => item.embedding);
 
       console.log(`Successfully generated ${embeddings.length} embeddings`);
       return embeddings;
     } catch (error) {
       console.error('Error generating embeddings:', error);
-      throw new Error(`Failed to generate embeddings: ${error.message}`);
+      
+      // Provide more specific error messages
+      if (error.message.includes('timeout')) {
+        throw new Error(`Embedding generation timed out. Try reducing batch size or check network connection.`);
+      } else if (error.message.includes('rate limit')) {
+        throw new Error(`OpenAI API rate limit exceeded. Please wait and try again.`);
+      } else if (error.message.includes('quota')) {
+        throw new Error(`OpenAI API quota exceeded. Please check your usage limits.`);
+      } else {
+        throw new Error(`Failed to generate embeddings: ${error.message}`);
+      }
     }
   }
 

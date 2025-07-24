@@ -37,15 +37,21 @@ class AIService {
         };
       }
 
+      // Truncate context to fit within token limits
+      const maxTokens = options.maxTokens || parseInt(process.env.AI_MAX_TOKENS) || 1000;
+      const truncatedContext = this.truncateContext(context, question, maxTokens);
+      
+      console.log(`📊 Context stats: ${context.length} documents -> ${truncatedContext.documents.length} documents (${truncatedContext.estimatedTokens} estimated tokens)`);
+
       // Prepare context text with better formatting
-      const contextText = context.map((doc, index) => 
+      const contextText = truncatedContext.documents.map((doc, index) => 
         `=== Document ${index + 1} ===
 Content: ${doc.text}
 Metadata: ${JSON.stringify(doc.metadata || {}, null, 2)}
 ---`
       ).join('\n\n');
 
-      // Create the prompt
+      // Create the prompt with token-aware sizing
       const systemPrompt = `You are a helpful AI assistant that answers questions based on the provided context. 
 
 IMPORTANT INSTRUCTIONS:
@@ -77,25 +83,28 @@ Please provide a detailed answer using the information from the provided context
 
 For pricing questions: If the exact product name isn't found but you see pricing for similar services (like "meeting bot" when asked about "executive AI"), use that information and explain the connection.`;
 
-      // Generate response using OpenAI
+      // Generate response using OpenAI with retry logic for rate limits
       const openai = this._initOpenAI();
-      const response = await openai.chat.completions.create({
-        model: options.model || process.env.AI_MODEL || 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        max_tokens: options.maxTokens || parseInt(process.env.AI_MAX_TOKENS) || 1000,
-        temperature: options.temperature || parseFloat(process.env.AI_TEMPERATURE) || 0.3,
-        top_p: options.topP || 1,
-        frequency_penalty: options.frequencyPenalty || 0,
-        presence_penalty: options.presencePenalty || 0
-      });
+      
+      const response = await this.makeOpenAIRequestWithRetry(() => 
+        openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          max_tokens: maxTokens,
+          temperature: options.temperature || parseFloat(process.env.AI_TEMPERATURE) || 0.3,
+          top_p: options.topP || 1,
+          frequency_penalty: options.frequencyPenalty || 0,
+          presence_penalty: options.presencePenalty || 0
+        })
+      );
 
       const answer = response.choices[0].message.content;
 
-      // Extract sources from context
-      const sources = context.map(doc => ({
+      // Extract sources from context (use original context for sources)
+      const sources = context.slice(0, 5).map(doc => ({
         text: doc.text.substring(0, 200) + '...',
         metadata: doc.metadata,
         relevance: doc.distance || 0
@@ -109,19 +118,215 @@ For pricing questions: If the exact product name isn't found but you see pricing
         answer,
         sources,
         confidence,
-        model: options.model || process.env.AI_MODEL || 'gpt-4o-mini',
-        tokens: response.usage?.total_tokens || 0
+        model: 'gpt-4o-mini',
+        tokens: response.usage?.total_tokens || 0,
+        contextTruncated: truncatedContext.wasTruncated,
+        documentsUsed: truncatedContext.documents.length,
+        totalDocumentsAvailable: context.length
       };
     } catch (error) {
       console.error('Error generating answer:', error);
-      // Return a structured error response instead of throwing
+      
+      // Handle rate limit errors specifically
+      if (error.status === 429) {
+        if (error.message.includes('rate limit') || error.message.includes('tokens per min')) {
+          throw new Error('Rate limit exceeded. Please wait a moment and try again. Consider using a shorter question or upgrading your OpenAI plan.');
+        } else if (error.message.includes('Request too large')) {
+          throw new Error('Request too large for the model. The system will automatically reduce context size on retry.');
+        }
+      }
+      
+      // Handle context length exceeded errors
+      if (error.status === 400 && error.message.includes('context_length_exceeded')) {
+        throw new Error('Context too long for the model. The system will automatically reduce context size on retry.');
+      }
+      
+      throw new Error(`Failed to generate answer: ${error.message}`);
+    }
+  }
+
+  /**
+   * Generate an answer with minimal context as fallback
+   * @param {string} question - User's question
+   * @param {Array<{text: string, metadata: Object}>} context - Retrieved relevant documents
+   * @param {Object} options - Additional options
+   * @returns {Promise<{answer: string, sources: Array, confidence: number}>} - Generated answer
+   */
+  async generateAnswerWithMinimalContext(question, context, options = {}) {
+    try {
+      if (!context || context.length === 0) {
+        return {
+          answer: "I don't have enough information to answer this question. Please try uploading some relevant documents first.",
+          sources: [],
+          confidence: 0
+        };
+      }
+
+      // Use only the most relevant document with heavy truncation
+      const mostRelevantDoc = context.sort((a, b) => (a.distance || 0) - (b.distance || 0))[0];
+      const truncatedText = mostRelevantDoc.text.substring(0, 2000) + '... [heavily truncated]';
+      
+      console.log(`🔄 Using minimal context fallback: 1 document, ~${Math.ceil(truncatedText.length / 4)} tokens`);
+
+      const systemPrompt = `You are a helpful AI assistant. Answer the question based on the provided context. If the context doesn't contain enough information, say so clearly.
+
+Context: ${truncatedText}
+
+Question: ${question}
+
+Answer:`;
+
+      const openai = this._initOpenAI();
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'user', content: systemPrompt }
+        ],
+        max_tokens: 500,
+        temperature: options.temperature || 0.3
+      });
+
+      const answer = response.choices[0].message.content;
+
       return {
-        answer: `Error: ${error.message}`,
-        sources: [],
-        confidence: 0,
-        model: options.model || process.env.AI_MODEL || 'gpt-4o-mini',
-        tokens: 0
+        answer,
+        sources: [{
+          text: mostRelevantDoc.text.substring(0, 200) + '...',
+          metadata: mostRelevantDoc.metadata,
+          relevance: mostRelevantDoc.distance || 0
+        }],
+        confidence: 0.3, // Lower confidence due to minimal context
+        model: 'gpt-4o-mini',
+        tokens: response.usage?.total_tokens || 0,
+        contextTruncated: true,
+        documentsUsed: 1,
+        totalDocumentsAvailable: context.length,
+        fallbackUsed: true
       };
+    } catch (error) {
+      console.error('Error in minimal context fallback:', error);
+      throw new Error(`Failed to generate answer even with minimal context: ${error.message}`);
+    }
+  }
+
+  /**
+   * Truncate context to fit within token limits
+   * @param {Array<Object>} context - Original context documents
+   * @param {string} question - User question
+   * @param {number} maxTokens - Maximum tokens for the response
+   * @returns {Object} - Truncated context with metadata
+   */
+  truncateContext(context, question, maxTokens) {
+    // Estimate tokens (rough approximation: 1 token ≈ 4 characters)
+    const estimateTokens = (text) => Math.ceil(text.length / 4);
+    
+    // Get model context limits - hardcoded to gpt-4o-mini
+    const model = 'gpt-4o-mini';
+    const modelContextLimit = this.getModelContextLimit(model);
+    
+    // Reserve tokens for the prompt structure, question, and response
+    const systemPromptTokens = estimateTokens(`You are a helpful AI assistant...`) + 500; // Base prompt + buffer
+    const questionTokens = estimateTokens(question);
+    const responseTokens = maxTokens;
+    const bufferTokens = 1000; // Safety buffer
+    
+    // Calculate available tokens for context (use model limit, not TPM limit)
+    const availableTokensForContext = Math.max(1000, 
+      modelContextLimit - systemPromptTokens - questionTokens - responseTokens - bufferTokens);
+    
+    console.log(`🔍 Token calculation: Model=${model}, ContextLimit=${modelContextLimit}, Available=${availableTokensForContext}`);
+    
+    let currentTokens = 0;
+    const truncatedDocuments = [];
+    let wasTruncated = false;
+    
+    // Sort documents by relevance (lower distance = more relevant)
+    const sortedContext = [...context].sort((a, b) => (a.distance || 0) - (b.distance || 0));
+    
+    for (const doc of sortedContext) {
+      const docText = doc.text || '';
+      const docTokens = estimateTokens(docText) + estimateTokens(JSON.stringify(doc.metadata || {})) + 50; // Metadata + formatting
+      
+      if (currentTokens + docTokens <= availableTokensForContext) {
+        truncatedDocuments.push(doc);
+        currentTokens += docTokens;
+      } else {
+        // Try to fit a truncated version of this document
+        const remainingTokens = availableTokensForContext - currentTokens - 100; // Reserve for metadata and formatting
+        if (remainingTokens > 500) { // Only if we have meaningful space (at least 2000 chars)
+          const maxChars = Math.min(remainingTokens * 4, 8000); // Cap at 8000 chars max
+          const truncatedText = docText.substring(0, maxChars) + '... [truncated]';
+          
+          truncatedDocuments.push({
+            ...doc,
+            text: truncatedText
+          });
+          wasTruncated = true;
+        } else {
+          wasTruncated = true;
+        }
+        break; // Stop adding more documents
+      }
+    }
+    
+    // Ensure we have at least one document
+    if (truncatedDocuments.length === 0 && context.length > 0) {
+      const firstDoc = sortedContext[0];
+      const maxChars = Math.min(4000, availableTokensForContext * 4 - 200); // At most 4000 chars
+      truncatedDocuments.push({
+        ...firstDoc,
+        text: firstDoc.text.substring(0, maxChars) + '... [truncated due to length]'
+      });
+      wasTruncated = true;
+    }
+    
+    return {
+      documents: truncatedDocuments,
+      wasTruncated,
+      estimatedTokens: currentTokens,
+      availableTokens: availableTokensForContext
+    };
+  }
+
+  /**
+   * Get the context length limit for different models
+   * @param {string} model - Model name
+   * @returns {number} - Context length limit in tokens
+   */
+  getModelContextLimit(model) {
+    const limits = {
+      'gpt-3.5-turbo': 16385,
+      'gpt-3.5-turbo-16k': 16385,
+      'gpt-4': 8192,
+      'gpt-4-32k': 32768,
+      'gpt-4o': 128000,
+      'gpt-4o-mini': 128000,
+      'gpt-4-turbo': 128000,
+      'gpt-4-turbo-preview': 128000
+    };
+    
+    return limits[model] || 16385; // Default to GPT-3.5-turbo limit
+  }
+
+  /**
+   * Make OpenAI request with retry logic for rate limits
+   * @param {Function} requestFn - Function that makes the OpenAI request
+   * @param {number} maxRetries - Maximum number of retries
+   * @returns {Promise} - OpenAI response
+   */
+  async makeOpenAIRequestWithRetry(requestFn, maxRetries = 2) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await requestFn();
+      } catch (error) {
+        if (error.status === 429 && attempt < maxRetries) {
+          const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff
+          console.log(`⏳ Rate limit hit, waiting ${waitTime}ms before retry ${attempt}/${maxRetries}...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+        throw error;
+      }
     }
   }
 
@@ -151,7 +356,7 @@ For pricing questions: If the exact product name isn't found but you see pricing
 
       const openai = this._initOpenAI();
       const response = await openai.chat.completions.create({
-        model: options.model || process.env.AI_MODEL || 'gpt-4o-mini',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'user', content: prompt }
         ],
@@ -192,7 +397,7 @@ For pricing questions: If the exact product name isn't found but you see pricing
 
       const openai = this._initOpenAI();
       const response = await openai.chat.completions.create({
-        model: options.model || process.env.AI_MODEL || 'gpt-4o-mini',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'user', content: prompt }
         ],
@@ -221,7 +426,7 @@ For pricing questions: If the exact product name isn't found but you see pricing
       // Test with a simple completion
       const openai = this._initOpenAI();
       const response = await openai.chat.completions.create({
-        model: process.env.AI_MODEL || 'gpt-4o-mini',
+        model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: 'Hello' }],
         max_tokens: 5
       });

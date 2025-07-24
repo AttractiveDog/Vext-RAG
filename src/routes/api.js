@@ -22,11 +22,14 @@ const chunker = new textChunker({
  * Upload and process documents
  */
 router.post('/ingest', async (req, res) => {
-  try {
-    const upload = req.app.locals.upload;
-    
-    upload.single('file')(req, res, async (err) => {
+  const upload = req.app.locals.upload;
+  
+  upload.single('file')(req, res, async (err) => {
+    try {
+      console.log('🚀 Starting ingest endpoint...');
+      
       if (err) {
+        console.error('❌ Multer error:', err);
         return res.status(400).json({
           error: err.message,
           timestamp: new Date().toISOString()
@@ -34,77 +37,122 @@ router.post('/ingest', async (req, res) => {
       }
 
       if (!req.file) {
+        console.error('❌ No file uploaded');
         return res.status(400).json({
           error: 'No file uploaded',
           timestamp: new Date().toISOString()
         });
       }
 
-      try {
-        const filePath = req.file.path;
-        const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : {};
+      const filePath = req.file.path;
+      const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : {};
+      
+      console.log('📝 Processing file:', req.file.filename);
 
-        // Validate file
-        await documentProcessor.validateFile(filePath);
+      // Validate file
+      console.log('⚡ Validating file...');
+      await documentProcessor.validateFile(filePath);
+      console.log('✅ File validation complete');
 
-        // Process document
-        const processedDoc = await documentProcessor.processDocument(filePath, metadata);
+      // Process document
+      console.log('⚡ Processing document...');
+      const processedDoc = await documentProcessor.processDocument(filePath, metadata);
+      console.log('✅ Document processing complete');
 
-        // Chunk the text
-        const chunks = chunker.chunkText(processedDoc.text);
-        const chunkStats = chunker.getChunkStats(chunks);
+      // Chunk the text
+      console.log('⚡ Chunking text...');
+      const chunks = chunker.chunkText(processedDoc.text);
+      const chunkStats = chunker.getChunkStats(chunks);
+      console.log(`✅ Text chunking complete: ${chunks.length} chunks`);
 
-        // Prepare documents for vector database
-        const documents = chunks.map((chunk, index) => ({
-          text: chunk.text,
-          metadata: {
-            ...processedDoc.metadata,
-            chunkIndex: index,
-            totalChunks: chunks.length,
-            chunkStart: chunk.start,
-            chunkEnd: chunk.end
-          }
-        }));
-
-        // Add to vector database
-        const documentIds = await vectorService.addDocuments(documents);
-
-        // Clean up uploaded file
-        await fs.unlink(filePath);
-
-        res.json({
-          success: true,
-          message: 'Document processed and ingested successfully',
-          data: {
-            filename: processedDoc.metadata.filename,
-            totalChunks: chunks.length,
-            chunkStats,
-            documentIds,
-            metadata: processedDoc.metadata
-          },
-          timestamp: new Date().toISOString()
-        });
-
-      } catch (error) {
-        // Clean up uploaded file on error
-        if (req.file) {
-          try {
-            await fs.unlink(req.file.path);
-          } catch (unlinkError) {
-            console.error('Error deleting uploaded file:', unlinkError);
-          }
+      // Prepare documents for vector database
+      console.log('⚡ Preparing documents for vector database...');
+      const documents = chunks.map((chunk, index) => ({
+        text: chunk.text,
+        metadata: {
+          ...processedDoc.metadata,
+          chunkIndex: index,
+          totalChunks: chunks.length,
+          chunkStart: chunk.start,
+          chunkEnd: chunk.end
         }
+      }));
+      console.log(`✅ Document preparation complete: ${documents.length} documents ready`);
 
-        throw error;
+      // Add to vector database with timeout
+      console.log(`⚡ Adding ${documents.length} documents to vector database...`);
+      console.log('🚨 This may take a while for large documents...');
+      
+      // Set a timeout for the vector operation (10 minutes)
+      const vectorTimeout = setTimeout(() => {
+        console.log('⚠️ Vector database operation is taking longer than expected...');
+      }, 60000); // 1 minute warning
+      
+      const documentIds = await vectorService.addDocuments(documents);
+      clearTimeout(vectorTimeout);
+      
+      console.log(`✅ Successfully added ${documentIds.length} documents to vector database`);
+
+      // Clean up uploaded file
+      console.log('⚡ Cleaning up uploaded file...');
+      await fs.unlink(filePath);
+      console.log(`🗑️ Cleaned up uploaded file: ${filePath}`);
+
+      const response = {
+        success: true,
+        message: 'Document processed and ingested successfully',
+        data: {
+          filename: processedDoc.metadata.filename,
+          totalChunks: chunks.length,
+          chunkStats,
+          documentIds,
+          metadata: processedDoc.metadata
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      console.log(`📤 Sending response to frontend:`, JSON.stringify(response, null, 2));
+      
+      // Check if response has already been sent
+      if (res.headersSent) {
+        console.log(`⚠️ Response already sent, skipping...`);
+        return;
       }
-    });
-  } catch (error) {
-    console.error('Error in ingest endpoint:', error);
-    res.status(500).json({
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
+      
+      res.json(response);
+      console.log(`✅ Response sent successfully`);
+
+    } catch (error) {
+      console.error('❌ Error in ingest endpoint:', error);
+      console.error('❌ Error stack:', error.stack);
+      
+      // Clean up uploaded file on error
+      if (req.file) {
+        try {
+          await fs.unlink(req.file.path);
+          console.log(`🗑️ Cleaned up uploaded file after error: ${req.file.path}`);
+        } catch (unlinkError) {
+          console.error('Error deleting uploaded file:', unlinkError);
+        }
+      }
+      
+      const errorResponse = {
+        error: error.message,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log(`📤 Sending error response to frontend:`, JSON.stringify(errorResponse, null, 2));
+      
+      // Check if response has already been sent
+      if (res.headersSent) {
+        console.log(`⚠️ Error response already sent, skipping...`);
+        return;
+      }
+      
+      res.status(500).json(errorResponse);
+      console.log(`✅ Error response sent successfully`);
+    }
+  });
 });
 
 /**
@@ -113,7 +161,7 @@ router.post('/ingest', async (req, res) => {
  */
 router.post('/query', async (req, res) => {
   try {
-    const { question, topK = 10, model, temperature } = req.body;
+    const { question, topK = 10, temperature } = req.body;
 
     if (!question || typeof question !== 'string') {
       return res.status(400).json({
@@ -151,11 +199,47 @@ router.post('/query', async (req, res) => {
       console.log(`Document ${index + 1}: ${doc.text.substring(0, 100)}...`);
     });
 
-    // Generate AI answer
-    const answer = await aiService.generateAnswer(question, searchResults, {
-      model,
-      temperature
-    });
+    // Generate AI answer with retry logic for context length issues
+    let answer;
+    let retryCount = 0;
+    const maxRetries = 2;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        answer = await aiService.generateAnswer(question, searchResults, {
+          temperature,
+          maxTokens: retryCount > 0 ? Math.max(500, 1000 - (retryCount * 200)) : 1000 // Reduce max tokens on retry
+        });
+        break; // Success, exit retry loop
+      } catch (error) {
+        retryCount++;
+        
+        // If it's a context length error and we haven't exceeded retries, try with fewer documents
+        if (error.message.includes('Context too long') && retryCount <= maxRetries) {
+          console.log(`🔄 Context too long, retrying with fewer documents (attempt ${retryCount}/${maxRetries})`);
+          // Reduce the number of search results for the next attempt
+          searchResults = searchResults.slice(0, Math.max(1, searchResults.length - (retryCount * 2)));
+          continue;
+        }
+        
+        // If we've exceeded retries and it's still a context length error, try minimal context fallback
+        if (error.message.includes('Context too long') && retryCount > maxRetries) {
+          console.log(`🔄 All retries failed, using minimal context fallback`);
+          try {
+            answer = await aiService.generateAnswerWithMinimalContext(question, searchResults, {
+              temperature
+            });
+            break; // Success with fallback
+          } catch (fallbackError) {
+            console.error('Fallback also failed:', fallbackError);
+            throw fallbackError; // Throw the original error if fallback also fails
+          }
+        }
+        
+        // For other errors or if we've exceeded retries, throw the error
+        throw error;
+      }
+    }
 
     // Save question to history
     const historyEntry = await questionHistoryService.addQuestion({
@@ -178,7 +262,10 @@ router.post('/query', async (req, res) => {
         model: answer.model,
         tokens: answer.tokens,
         searchResults: searchResults.length,
-        historyId: historyEntry.id
+        historyId: historyEntry.id,
+        contextTruncated: answer.contextTruncated,
+        documentsUsed: answer.documentsUsed,
+        totalDocumentsAvailable: answer.totalDocumentsAvailable
       },
       // Flat structure for React frontend compatibility
       question,
@@ -189,15 +276,46 @@ router.post('/query', async (req, res) => {
       tokens: answer.tokens,
       searchResults: searchResults.length,
       historyId: historyEntry.id,
+      contextTruncated: answer.contextTruncated,
+      documentsUsed: answer.documentsUsed,
+      totalDocumentsAvailable: answer.totalDocumentsAvailable,
       timestamp: new Date().toISOString()
     };
+
+    // Add informational message if context was truncated
+    if (answer.contextTruncated) {
+      response.info = `Context was truncated to fit token limits. Using ${answer.documentsUsed} of ${answer.totalDocumentsAvailable} available documents.`;
+    }
     
     res.json(response);
 
   } catch (error) {
     console.error('Error in query endpoint:', error);
-    res.status(500).json({
-      error: error.message,
+    
+    let errorMessage = error.message;
+    let statusCode = 500;
+    
+    // Handle specific error types
+    if (error.message.includes('Rate limit exceeded')) {
+      statusCode = 429;
+      errorMessage = 'Rate limit exceeded. Please wait a moment before trying again.';
+    } else if (error.message.includes('Request too large')) {
+      statusCode = 413;
+      errorMessage = 'Query is too complex. Try asking a more specific question or wait for automatic optimization.';
+    } else if (error.message.includes('Context too long')) {
+      statusCode = 413;
+      errorMessage = 'Query context is too large. Try asking a more specific question.';
+    } else if (error.message.includes('Failed to search documents')) {
+      statusCode = 503;
+      errorMessage = 'Vector database is temporarily unavailable. Please try again in a moment.';
+    } else if (error.message.includes('Failed to generate embeddings')) {
+      statusCode = 503;
+      errorMessage = 'Embedding service is temporarily unavailable. Please try again in a moment.';
+    }
+    
+    res.status(statusCode).json({
+      error: errorMessage,
+      originalError: process.env.NODE_ENV === 'development' ? error.message : undefined,
       timestamp: new Date().toISOString()
     });
   }
@@ -269,7 +387,7 @@ router.delete('/documents/:id', async (req, res) => {
  */
 router.post('/summarize', async (req, res) => {
   try {
-    const { model, maxTokens } = req.body;
+    const { maxTokens } = req.body;
 
     const documents = await vectorService.getAllDocuments();
     
@@ -281,7 +399,6 @@ router.post('/summarize', async (req, res) => {
     }
 
     const summary = await aiService.generateSummary(documents, {
-      model,
       maxTokens
     });
 
@@ -290,7 +407,7 @@ router.post('/summarize', async (req, res) => {
       data: {
         summary,
         documentCount: documents.length,
-        model: model || 'gpt-4o-mini'
+        model: 'gpt-4o-mini'
       },
       timestamp: new Date().toISOString()
     });
@@ -310,7 +427,7 @@ router.post('/summarize', async (req, res) => {
  */
 router.post('/topics', async (req, res) => {
   try {
-    const { model, maxTokens } = req.body;
+    const { maxTokens } = req.body;
 
     const documents = await vectorService.getAllDocuments();
     
@@ -322,7 +439,6 @@ router.post('/topics', async (req, res) => {
     }
 
     const topics = await aiService.extractTopics(documents, {
-      model,
       maxTokens
     });
 
@@ -331,7 +447,7 @@ router.post('/topics', async (req, res) => {
       data: {
         topics,
         documentCount: documents.length,
-        model: model || 'gpt-4o-mini'
+        model: 'gpt-4o-mini'
       },
       timestamp: new Date().toISOString()
     });
@@ -365,7 +481,8 @@ router.get('/stats', async (req, res) => {
           vext: vextValid,
           ai: aiValid
         },
-        supportedFormats: documentProcessor.getSupportedFormats()
+        supportedFormats: documentProcessor.getSupportedFormats(),
+        model: 'gpt-4o-mini'
       },
       timestamp: new Date().toISOString()
     });
