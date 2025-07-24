@@ -34,7 +34,7 @@ async function setup() {
     console.log('1. Start the server: npm start');
     console.log('2. Upload documents: POST /api/ingest');
     console.log('3. Ask questions: POST /api/query');
-    console.log('\n📚 API Documentation: http://localhost:3000');
+    console.log('\n📚 API Documentation: http://3.6.147.238:3000');
 
   } catch (error) {
     console.error('\n❌ Setup failed:', error.message);

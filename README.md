@@ -126,7 +126,7 @@ Upload and process documents
 
 **Request:**
 ```bash
-curl -X POST http://localhost:3000/api/ingest \
+curl -X POST http://3.6.147.238:3000/api/ingest \
   -F "file=@document.pdf" \
   -F 'metadata={"title":"Sample Document","author":"John Doe"}'
 ```
@@ -210,13 +210,13 @@ Extract topics from documents
 
 ```bash
 # Upload a PDF document
-curl -X POST http://localhost:3000/api/ingest \
+curl -X POST http://3.6.147.238:3000/api/ingest \
   -F "file=@document.pdf" \
   -F 'metadata={"title":"Technical Manual","author":"Engineering Team"}'
 
 # Upload multiple documents
 for file in *.pdf; do
-  curl -X POST http://localhost:3000/api/ingest \
+  curl -X POST http://3.6.147.238:3000/api/ingest \
     -F "file=@$file" \
     -F "metadata={\"title\":\"$(basename $file .pdf)\"}"
 done
@@ -226,12 +226,12 @@ done
 
 ```bash
 # Basic question
-curl -X POST http://localhost:3000/api/query \
+curl -X POST http://3.6.147.238:3000/api/query \
   -H "Content-Type: application/json" \
   -d '{"question": "What are the main topics discussed in the documents?"}'
 
 # Question with specific parameters
-curl -X POST http://localhost:3000/api/query \
+curl -X POST http://3.6.147.238:3000/api/query \
   -H "Content-Type: application/json" \
   -d '{
     "question": "Explain the technical specifications",
@@ -242,7 +242,7 @@ curl -X POST http://localhost:3000/api/query \
 
 ### Web Interface
 
-Access the web interface at `http://localhost:3000` for:
+Access the web interface at `http://3.6.147.238:3000` for:
 - Document upload and management
 - Interactive question asking
 - System statistics and monitoring
@@ -328,7 +328,7 @@ docker run -d \
        server_name your-domain.com;
        
        location / {
-           proxy_pass http://localhost:3000;
+           proxy_pass http://3.6.147.238:3000;
            proxy_http_version 1.1;
            proxy_set_header Upgrade $http_upgrade;
            proxy_set_header Connection 'upgrade';

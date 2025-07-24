@@ -91,28 +91,28 @@ npm start
 You should see:
 ```
 🚀 Vext RAG System server running on port 3000
-📚 API Documentation: http://localhost:3000
-🏥 Health Check: http://localhost:3000/health
+📚 API Documentation: http://3.6.147.238:3000
+🏥 Health Check: http://3.6.147.238:3000/health
 ```
 
 ## Step 6: Test the System
 
 ### Option A: Use the Web Interface
-Open your browser and go to: http://localhost:3000
+Open your browser and go to: http://3.6.147.238:3000
 
 ### Option B: Use the API Directly
 
 ```bash
 # Test the health endpoint
-curl http://localhost:3000/health
+curl http://3.6.147.238:3000/health
 
 # Upload a document
-curl -X POST http://localhost:3000/api/ingest \
+curl -X POST http://3.6.147.238:3000/api/ingest \
   -F "file=@your-document.pdf" \
   -F 'metadata={"title":"Test Document"}'
 
 # Ask a question
-curl -X POST http://localhost:3000/api/query \
+curl -X POST http://3.6.147.238:3000/api/query \
   -H "Content-Type: application/json" \
   -d '{"question": "What is this document about?"}'
 ```
