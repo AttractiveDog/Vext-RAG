@@ -8,6 +8,7 @@ import aiService from '../services/aiService.js';
 import vextService from '../services/vextService.js';
 import questionHistoryService from '../services/questionHistoryService.js';
 import ocrService from '../services/ocrService.js';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
 
@@ -15,6 +16,64 @@ const router = express.Router();
 const chunker = new textChunker({
   chunkSize: parseInt(process.env.CHUNK_SIZE) || 1000,
   chunkOverlap: parseInt(process.env.CHUNK_OVERLAP) || 200
+});
+
+/**
+ * GET /api/health
+ * Check system health and ChromaDB connection
+ */
+router.get('/health', async (req, res) => {
+  try {
+    console.log('🔍 Health check requested...');
+    
+    const healthStatus = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      services: {}
+    };
+
+    // Check ChromaDB health
+    try {
+      const chromaHealth = await vectorService.checkHealth();
+      healthStatus.services.chromadb = chromaHealth;
+    } catch (error) {
+      healthStatus.services.chromadb = {
+        healthy: false,
+        error: error.message
+      };
+    }
+
+    // Check OpenAI service (if API key is available)
+    try {
+      if (process.env.OPENAI_API_KEY) {
+        await vextService.validateService();
+        healthStatus.services.openai = { healthy: true };
+      } else {
+        healthStatus.services.openai = { healthy: false, error: 'No API key configured' };
+      }
+    } catch (error) {
+      healthStatus.services.openai = {
+        healthy: false,
+        error: error.message
+      };
+    }
+
+    // Determine overall health
+    const allHealthy = Object.values(healthStatus.services).every(service => service.healthy);
+    healthStatus.status = allHealthy ? 'ok' : 'degraded';
+
+    const statusCode = allHealthy ? 200 : 503;
+    res.status(statusCode).json(healthStatus);
+    
+    console.log(`✅ Health check completed: ${healthStatus.status}`);
+  } catch (error) {
+    console.error('❌ Health check failed:', error);
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 /**
@@ -67,17 +126,34 @@ router.post('/ingest', async (req, res) => {
 
       // Prepare documents for vector database
       console.log('⚡ Preparing documents for vector database...');
+      
+      // Generate a unique document ID for the original file
+      const originalDocumentId = uuidv4();
+      
       const documents = chunks.map((chunk, index) => ({
         text: chunk.text,
         metadata: {
           ...processedDoc.metadata,
+          // Document-level identifiers
+          documentId: originalDocumentId,
+          originalFilename: processedDoc.metadata.filename,
+          // Chunk-level identifiers
           chunkIndex: index,
           totalChunks: chunks.length,
           chunkStart: chunk.start,
-          chunkEnd: chunk.end
+          chunkEnd: chunk.end,
+          // Processing metadata
+          processedAt: new Date().toISOString(),
+          chunkSize: chunk.text.length,
+          // Ensure consistent metadata structure
+          source: 'file_upload',
+          type: 'chunk'
         }
       }));
-      console.log(`✅ Document preparation complete: ${documents.length} documents ready`);
+      
+      console.log(`✅ Document preparation complete: ${documents.length} chunks from 1 document`);
+      console.log(`📄 Original document ID: ${originalDocumentId}`);
+      console.log(`📊 Chunk statistics: ${chunkStats.totalChunks} chunks, avg size: ${Math.round(chunkStats.averageChunkSize)} chars`);
 
       // Add to vector database with timeout
       console.log(`⚡ Adding ${documents.length} documents to vector database...`);
@@ -88,10 +164,10 @@ router.post('/ingest', async (req, res) => {
         console.log('⚠️ Vector database operation is taking longer than expected...');
       }, 60000); // 1 minute warning
       
-      const documentIds = await vectorService.addDocuments(documents);
+      const chunkIds = await vectorService.addDocumentChunks(documents, originalDocumentId);
       clearTimeout(vectorTimeout);
       
-      console.log(`✅ Successfully added ${documentIds.length} documents to vector database`);
+      console.log(`✅ Successfully added ${chunkIds.length} chunks to vector database`);
 
       // Clean up uploaded file
       console.log('⚡ Cleaning up uploaded file...');
@@ -103,9 +179,10 @@ router.post('/ingest', async (req, res) => {
         message: 'Document processed and ingested successfully',
         data: {
           filename: processedDoc.metadata.filename,
+          documentId: originalDocumentId,
           totalChunks: chunks.length,
           chunkStats,
-          documentIds,
+          chunkIds,
           metadata: processedDoc.metadata
         },
         timestamp: new Date().toISOString()
@@ -173,31 +250,49 @@ router.post('/query', async (req, res) => {
     console.log(`Processing query: "${question}"`);
 
     // Search for relevant documents with query expansion
-    let searchResults = await vectorService.search(question, topK);
+    let searchResults = await vectorService.searchDocuments(question, topK);
     
     // If we don't get enough results or the question is about pricing, try expanded search
     if (searchResults.length < 3 || question.toLowerCase().includes('pricing') || question.toLowerCase().includes('cost')) {
       const expandedQuery = question + ' pricing cost price fee rate';
-      const expandedResults = await vectorService.search(expandedQuery, topK);
+      const expandedResults = await vectorService.searchDocuments(expandedQuery, topK);
       
       // Merge results, removing duplicates
       const allResults = [...searchResults];
       expandedResults.forEach(expandedDoc => {
-        if (!allResults.find(doc => doc.id === expandedDoc.id)) {
+        if (!allResults.find(doc => doc.documentId === expandedDoc.documentId)) {
           allResults.push(expandedDoc);
         }
       });
       
       // Sort by relevance and take top K
-      allResults.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+      allResults.sort((a, b) => b.totalScore - a.totalScore);
       searchResults = allResults.slice(0, topK);
     }
     
     // Debug: Log the search results
     console.log(`Found ${searchResults.length} relevant documents:`);
     searchResults.forEach((doc, index) => {
-      console.log(`Document ${index + 1}: ${doc.text.substring(0, 100)}...`);
+      console.log(`Document ${index + 1}: ${doc.originalFilename} (${doc.chunkCount} chunks, score: ${doc.totalScore.toFixed(3)})`);
     });
+
+    // Flatten search results for AI service (extract chunks from grouped documents)
+    const flattenedContext = [];
+    searchResults.forEach(docGroup => {
+      docGroup.chunks.forEach(chunk => {
+        flattenedContext.push({
+          text: chunk.text,
+          metadata: {
+            ...chunk,
+            originalFilename: docGroup.originalFilename,
+            documentId: docGroup.documentId,
+            totalScore: docGroup.totalScore
+          }
+        });
+      });
+    });
+
+    console.log(`Flattened ${flattenedContext.length} chunks from ${searchResults.length} documents for AI context`);
 
     // Generate AI answer with retry logic for context length issues
     let answer;
@@ -206,7 +301,7 @@ router.post('/query', async (req, res) => {
     
     while (retryCount <= maxRetries) {
       try {
-        answer = await aiService.generateAnswer(question, searchResults, {
+        answer = await aiService.generateAnswer(question, flattenedContext, {
           temperature,
           maxTokens: retryCount > 0 ? Math.max(500, 1000 - (retryCount * 200)) : 1000 // Reduce max tokens on retry
         });
@@ -226,7 +321,7 @@ router.post('/query', async (req, res) => {
         if (error.message.includes('Context too long') && retryCount > maxRetries) {
           console.log(`🔄 All retries failed, using minimal context fallback`);
           try {
-            answer = await aiService.generateAnswerWithMinimalContext(question, searchResults, {
+            answer = await aiService.generateAnswerWithMinimalContext(question, flattenedContext, {
               temperature
             });
             break; // Success with fallback

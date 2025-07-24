@@ -91,7 +91,7 @@ class VectorService {
   }
 
   /**
-   * Add documents to the vector database
+   * Add documents with enhanced error handling for 422 errors
    * @param {Array<{text: string, metadata: Object}>} documents - Documents to add
    * @returns {Promise<Array<string>>} - Array of document IDs
    */
@@ -99,9 +99,10 @@ class VectorService {
     try {
       return await this._addDocumentsInternal(documents);
     } catch (error) {
-      // If we get a 422 error, try resetting the collection and retrying once
+      // Handle 422 errors specifically
       if (error.message.includes('422') || error.message.includes('Unprocessable Entity')) {
         console.log('🔄 Received 422 error, attempting to reset collection and retry...');
+        
         try {
           await this.resetCollection();
           console.log('✅ Collection reset successful, retrying document addition...');
@@ -110,10 +111,100 @@ class VectorService {
           console.error('❌ Retry after collection reset failed:', retryError);
           throw new Error(`Failed to add documents after collection reset: ${retryError.message}`);
         }
-      } else {
-        throw error;
+      }
+      
+      throw error;
+    }
+  }
+
+  /**
+   * Validate and clean documents before processing
+   * @param {Array<{text: string, metadata: Object}>} documents - Documents to validate
+   * @returns {Array<{text: string, metadata: Object}>} - Cleaned documents
+   */
+  validateAndCleanDocuments(documents) {
+    if (!Array.isArray(documents)) {
+      throw new Error('Documents must be an array');
+    }
+
+    if (documents.length === 0) {
+      throw new Error('Documents array cannot be empty');
+    }
+
+    const cleanedDocuments = documents.map((doc, index) => {
+      // Validate document structure
+      if (!doc || typeof doc !== 'object') {
+        throw new Error(`Invalid document at index ${index}: must be an object`);
+      }
+
+      if (!doc.text || typeof doc.text !== 'string') {
+        throw new Error(`Invalid text at index ${index}: must be a non-empty string`);
+      }
+
+      // Clean and validate text
+      let cleanedText = doc.text.trim();
+      if (cleanedText.length === 0) {
+        cleanedText = '[Empty document content]';
+      }
+
+      // Limit text length to prevent ChromaDB issues
+      if (cleanedText.length > 100000) {
+        console.warn(`⚠️ Truncating long text at index ${index} (${cleanedText.length} chars)`);
+        cleanedText = cleanedText.substring(0, 100000);
+      }
+
+      // Clean metadata
+      const cleanedMetadata = doc.metadata ? this.cleanMetadata(doc.metadata) : {};
+
+      return {
+        text: cleanedText,
+        metadata: cleanedMetadata
+      };
+    });
+
+    console.log(`✅ Validated and cleaned ${cleanedDocuments.length} documents`);
+    return cleanedDocuments;
+  }
+
+  /**
+   * Add documents with enhanced error handling for 422 errors
+   * @param {Array<{text: string, metadata: Object}>} documents - Documents to add
+   * @returns {Promise<Array<string>>} - Array of document IDs
+   */
+  async addDocumentsWithRetry(documents) {
+    // Validate and clean documents first
+    const cleanedDocuments = this.validateAndCleanDocuments(documents);
+    
+    const maxRetries = 3;
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 Attempt ${attempt}/${maxRetries} to add documents...`);
+        return await this._addDocumentsInternal(cleanedDocuments);
+      } catch (error) {
+        lastError = error;
+        console.error(`❌ Attempt ${attempt} failed:`, error.message);
+
+        if (error.message.includes('422') || error.message.includes('Unprocessable Entity')) {
+          if (attempt < maxRetries) {
+            console.log('🔄 422 error detected, resetting collection and retrying...');
+            try {
+              await this.resetCollection();
+              // Wait a bit before retrying
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            } catch (resetError) {
+              console.error('Failed to reset collection:', resetError);
+            }
+          }
+        } else {
+          // For non-422 errors, don't retry
+          break;
+        }
       }
     }
+
+    throw new Error(`Failed to add documents after ${maxRetries} attempts: ${lastError.message}`);
   }
 
   /**
@@ -127,26 +218,37 @@ class VectorService {
         await this.initialize();
       }
 
-      console.log(`Adding ${documents.length} documents to vector database...`);
-
-      // Extract texts for embedding
+      // Extract text content and metadata
       const texts = documents.map(doc => doc.text);
-      
-      // Generate embeddings using Vext with batching for large datasets
+      const metadatas = documents.map(doc => doc.metadata || {});
+
+      // Generate embeddings
       console.log(`Generating embeddings for ${texts.length} text chunks...`);
       const embeddings = await this.generateEmbeddingsInBatches(texts);
-      console.log(`✅ Successfully generated ${embeddings.length} embeddings`);
 
       // Prepare data for ChromaDB
       const ids = documents.map(() => uuidv4());
-      const metadatas = documents.map(doc => doc.metadata || {});
 
       // Add to collection in batches if large dataset
       if (documents.length > 100) {
         console.log(`📦 Adding documents in batches due to large size (${documents.length} documents)`);
         await this.addDocumentsInBatches(ids, embeddings, texts, metadatas);
       } else {
+        // Validate data before sending to ChromaDB
+        const validationResult = this.validateBatchData(ids, embeddings, texts, metadatas);
+        if (!validationResult.valid) {
+          throw new Error(`Data validation failed: ${validationResult.error}`);
+        }
+
         // Add to collection all at once for smaller datasets
+        console.log(`📤 Sending ${documents.length} documents to ChromaDB...`);
+        console.log(`📊 Data summary: IDs=${ids.length}, Embeddings=${embeddings.length}, Texts=${texts.length}, Metadata=${metadatas.length}`);
+        
+        // Log sample data for debugging
+        if (documents.length > 0) {
+          console.log(`🔍 Sample data - ID: ${ids[0].substring(0, 20)}..., Text length: ${texts[0].length}, Embedding dims: ${embeddings[0].length}`);
+        }
+
         await this.collection.add({
           ids: ids,
           embeddings: embeddings,
@@ -159,6 +261,26 @@ class VectorService {
       return ids;
     } catch (error) {
       console.error('Error adding documents to vector database:', error);
+      
+      // Provide more specific error information for 422 errors
+      if (error.message.includes('422') || error.message.includes('Unprocessable Entity')) {
+        console.error('🔍 422 Error Details:');
+        console.error('  - This usually indicates invalid data format or schema mismatch');
+        console.error('  - Check that all arrays have the same length');
+        console.error('  - Verify that embeddings are valid numeric arrays');
+        console.error('  - Ensure metadata values are compatible with ChromaDB');
+        
+        // Try to provide more debugging info
+        if (documents && documents.length > 0) {
+          console.error('  - Sample document structure:', {
+            hasText: !!documents[0].text,
+            textLength: documents[0].text?.length,
+            hasMetadata: !!documents[0].metadata,
+            metadataKeys: documents[0].metadata ? Object.keys(documents[0].metadata) : []
+          });
+        }
+      }
+      
       throw new Error(`Failed to add documents: ${error.message}`);
     }
   }
@@ -282,7 +404,7 @@ class VectorService {
     if (ids.length !== embeddings.length || ids.length !== texts.length || ids.length !== metadatas.length) {
       return {
         valid: false,
-        error: `Array length mismatch: ids(${ids.length}), embeddings(${embeddings.length}), texts(${texts.length}), metadatas(${metadatas.length})`
+        error: `Array length mismatch: ids(${ids.length}), embeddings(${embeddings.length}), texts(${ids.length}), metadatas(${metadatas.length})`
       };
     }
 
@@ -291,6 +413,12 @@ class VectorService {
       // Validate ID
       if (!ids[i] || typeof ids[i] !== 'string' || ids[i].trim() === '') {
         return { valid: false, error: `Invalid ID at index ${i}: ${ids[i]}` };
+      }
+
+      // Ensure ID is not too long (ChromaDB has limits)
+      if (ids[i].length > 1000) {
+        ids[i] = ids[i].substring(0, 1000);
+        console.warn(`⚠️ Truncated long ID at index ${i}`);
       }
 
       // Validate embedding
@@ -303,6 +431,11 @@ class VectorService {
         return { valid: false, error: `Invalid embedding values (NaN or Infinity) at index ${i}` };
       }
 
+      // Ensure embedding dimensions are reasonable (OpenAI ada-002 has 1536 dimensions)
+      if (embeddings[i].length > 2000) {
+        console.warn(`⚠️ Large embedding dimension at index ${i}: ${embeddings[i].length}`);
+      }
+
       // Validate text
       if (typeof texts[i] !== 'string') {
         return { valid: false, error: `Invalid text type at index ${i}: ${typeof texts[i]}` };
@@ -312,6 +445,12 @@ class VectorService {
       if (texts[i].trim() === '') {
         console.warn(`⚠️ Empty text found at index ${i}, replacing with placeholder`);
         texts[i] = '[Empty document content]';
+      }
+
+      // Ensure text is not too long (ChromaDB has limits)
+      if (texts[i].length > 100000) {
+        console.warn(`⚠️ Truncating long text at index ${i} (${texts[i].length} chars)`);
+        texts[i] = texts[i].substring(0, 100000);
       }
 
       // Validate metadata
@@ -343,18 +482,29 @@ class VectorService {
         continue;
       }
 
+      // Ensure key is a string and not too long
+      const cleanKey = String(key).substring(0, 100);
+      
       // Convert non-primitive values to strings
       if (typeof value === 'object' && !Array.isArray(value)) {
-        cleaned[key] = JSON.stringify(value);
+        try {
+          cleaned[cleanKey] = JSON.stringify(value).substring(0, 1000);
+        } catch (e) {
+          cleaned[cleanKey] = '[Complex Object]';
+        }
       } else if (Array.isArray(value)) {
-        // Convert arrays to strings
-        cleaned[key] = value.join(', ');
+        // Convert arrays to strings, limit length
+        cleaned[cleanKey] = value.join(', ').substring(0, 1000);
       } else if (typeof value === 'boolean' || typeof value === 'number' || typeof value === 'string') {
-        // Keep primitive values as-is
-        cleaned[key] = value;
+        // Keep primitive values as-is, but limit string length
+        if (typeof value === 'string') {
+          cleaned[cleanKey] = value.substring(0, 1000);
+        } else {
+          cleaned[cleanKey] = value;
+        }
       } else {
         // Convert anything else to string
-        cleaned[key] = String(value);
+        cleaned[cleanKey] = String(value).substring(0, 1000);
       }
     }
     
@@ -587,6 +737,178 @@ class VectorService {
     } catch (error) {
       console.error('❌ Error clearing collection:', error);
       throw new Error(`Failed to clear collection: ${error.message}`);
+    }
+  }
+
+  /**
+   * Check ChromaDB connection health
+   * @returns {Promise<Object>} - Health status
+   */
+  async checkHealth() {
+    try {
+      console.log('🔍 Checking ChromaDB connection health...');
+      
+      // Test basic connection
+      const collections = await this.client.listCollections();
+      console.log(`✅ ChromaDB connection healthy. Found ${collections.length} collections`);
+      
+      // Check if our collection exists
+      let collectionExists = false;
+      try {
+        await this.client.getCollection({ name: this.collectionName });
+        collectionExists = true;
+        console.log(`✅ Collection '${this.collectionName}' exists`);
+      } catch (error) {
+        console.log(`⚠️ Collection '${this.collectionName}' does not exist`);
+      }
+      
+      return {
+        healthy: true,
+        collections: collections.length,
+        targetCollectionExists: collectionExists,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('❌ ChromaDB health check failed:', error);
+      return {
+        healthy: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+
+  /**
+   * Get detailed collection information
+   * @returns {Promise<Object>} - Collection details
+   */
+  async getCollectionDetails() {
+    try {
+      if (!this.collection) {
+        await this.initialize();
+      }
+      
+      const count = await this.collection.count();
+      console.log(`📊 Collection '${this.collectionName}' has ${count} documents`);
+      
+      return {
+        name: this.collectionName,
+        documentCount: count,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error getting collection details:', error);
+      throw new Error(`Failed to get collection details: ${error.message}`);
+    }
+  }
+
+  /**
+   * Add document chunks with proper parent document relationships
+   * @param {Array<{text: string, metadata: Object}>} chunks - Document chunks to add
+   * @param {string} parentDocumentId - ID of the parent document
+   * @returns {Promise<Array<string>>} - Array of chunk IDs
+   */
+  async addDocumentChunks(chunks, parentDocumentId) {
+    try {
+      if (!this.collection) {
+        await this.initialize();
+      }
+
+      console.log(`📄 Adding ${chunks.length} chunks for parent document: ${parentDocumentId}`);
+
+      // Validate and clean chunks
+      const cleanedChunks = this.validateAndCleanDocuments(chunks);
+      
+      // Generate embeddings for all chunks
+      const texts = cleanedChunks.map(chunk => chunk.text);
+      console.log(`Generating embeddings for ${texts.length} chunks...`);
+      const embeddings = await this.generateEmbeddingsInBatches(texts);
+
+      // Generate unique IDs for each chunk
+      const chunkIds = cleanedChunks.map((_, index) => `${parentDocumentId}_chunk_${index}`);
+      
+      // Prepare metadata with proper relationships
+      const metadatas = cleanedChunks.map((chunk, index) => ({
+        ...chunk.metadata,
+        parentDocumentId: parentDocumentId,
+        chunkId: chunkIds[index],
+        chunkNumber: index + 1,
+        isChunk: true
+      }));
+
+      // Validate the batch data
+      const validationResult = this.validateBatchData(chunkIds, embeddings, texts, metadatas);
+      if (!validationResult.valid) {
+        throw new Error(`Chunk validation failed: ${validationResult.error}`);
+      }
+
+      // Add chunks to collection
+      console.log(`📤 Adding ${chunks.length} chunks to ChromaDB...`);
+      await this.collection.add({
+        ids: chunkIds,
+        embeddings: embeddings,
+        documents: texts,
+        metadatas: metadatas
+      });
+
+      console.log(`✅ Successfully added ${chunks.length} chunks for document: ${parentDocumentId}`);
+      return chunkIds;
+    } catch (error) {
+      console.error('Error adding document chunks:', error);
+      throw new Error(`Failed to add document chunks: ${error.message}`);
+    }
+  }
+
+  /**
+   * Search for documents and group results by parent document
+   * @param {string} query - Search query
+   * @param {number} topK - Number of results to return
+   * @param {Object} filter - Optional metadata filter
+   * @param {number} minSimilarity - Minimum similarity threshold (0-1)
+   * @returns {Promise<Array<{documentId: string, chunks: Array, totalScore: number}>>} - Grouped search results
+   */
+  async searchDocuments(query, topK = 5, filter = null, minSimilarity = 0) {
+    try {
+      // First, search for individual chunks
+      const chunkResults = await this.search(query, topK * 3, filter, minSimilarity);
+      
+      // Group results by parent document
+      const documentGroups = {};
+      
+      chunkResults.forEach(result => {
+        const parentDocId = result.metadata.parentDocumentId || result.metadata.documentId;
+        if (!documentGroups[parentDocId]) {
+          documentGroups[parentDocId] = {
+            documentId: parentDocId,
+            originalFilename: result.metadata.originalFilename || 'Unknown',
+            chunks: [],
+            totalScore: 0,
+            chunkCount: 0
+          };
+        }
+        
+        documentGroups[parentDocId].chunks.push({
+          id: result.id,
+          text: result.text,
+          similarity: result.similarity,
+          chunkIndex: result.metadata.chunkIndex,
+          chunkNumber: result.metadata.chunkNumber
+        });
+        
+        documentGroups[parentDocId].totalScore += result.similarity;
+        documentGroups[parentDocId].chunkCount++;
+      });
+      
+      // Convert to array and sort by total score
+      const groupedResults = Object.values(documentGroups)
+        .sort((a, b) => b.totalScore - a.totalScore)
+        .slice(0, topK);
+      
+      console.log(`📄 Found ${groupedResults.length} relevant documents from ${chunkResults.length} chunks`);
+      return groupedResults;
+    } catch (error) {
+      console.error('Error searching documents:', error);
+      throw new Error(`Failed to search documents: ${error.message}`);
     }
   }
 }

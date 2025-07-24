@@ -98,8 +98,8 @@ app.use('*', (req, res) => {
 // Start server
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Vext RAG System server running on port ${PORT}`);
-  console.log(`📚 API Documentation: http://localhost:${PORT}`);
-  console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
+  console.log(`📚 API Documentation: http://3.6.147.238:${PORT}`);
+  console.log(`🏥 Health Check: http://3.6.147.238:${PORT}/health`);
 });
 
 export default app; 
