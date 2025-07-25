@@ -181,15 +181,24 @@ class OCRService {
       const base64Image = imageBuffer.toString('base64');
       const mimeType = this.getMimeType(validation.fileType);
 
-      // Use the dedicated OCR API with correct parameter names
-      const ocrResponse = await this.client.ocr.process({
+      // Prepare OCR parameters
+      const ocrParams = {
         model: this.model,
         document: {
           type: "image_url",
           imageUrl: `data:${mimeType};base64,${base64Image}`
-        },
-        includeImageBase64: this.includeImages
-      });
+        }
+      };
+
+      // Handle image processing parameters
+      if (this.includeImages) {
+        ocrParams.includeImageBase64 = true;
+      } else {
+        ocrParams.imageLimit = 0; // Don't include images when not needed
+      }
+
+      // Use the dedicated OCR API with correct parameter names
+      const ocrResponse = await this.client.ocr.process(ocrParams);
 
       // Process the OCR response
       const results = this.processOCRResponse(ocrResponse, filePath, options);
@@ -284,15 +293,33 @@ class OCRService {
     console.log(`✅ File uploaded with ID: ${uploadedFile.id}`);
 
     try {
-      // Now process with OCR using the uploaded file ID
-      const ocrResponse = await this.client.ocr.process({
+      // Prepare OCR parameters based on file type
+      const ocrParams = {
         model: this.model,
         document: {
           type: "file",
           fileId: uploadedFile.id
-        },
-        includeImageBase64: this.includeImages
-      });
+        }
+      };
+
+      // Handle .docx files specifically - they require image_limit=0 if not including images
+      if (validation.fileType === '.docx') {
+        if (this.includeImages) {
+          ocrParams.includeImageBase64 = true;
+          // For .docx with images, images are returned in base64 format
+        } else {
+          ocrParams.imageLimit = 0; // Don't include images for .docx files
+        }
+      } else {
+        // For other file types, use the standard includeImageBase64 parameter
+        ocrParams.includeImageBase64 = this.includeImages;
+        if (!this.includeImages) {
+          ocrParams.imageLimit = 0;
+        }
+      }
+
+      // Now process with OCR using the uploaded file ID
+      const ocrResponse = await this.client.ocr.process(ocrParams);
 
       // Process the OCR response
       const results = this.processOCRResponse(ocrResponse, filePath, options);
@@ -326,15 +353,33 @@ class OCRService {
     const base64Data = fileBuffer.toString('base64');
     const mimeType = this.getMimeType(validation.fileType);
 
-    // Use the OCR API with base64 data URL
-    const ocrResponse = await this.client.ocr.process({
+    // Prepare OCR parameters based on file type
+    const ocrParams = {
       model: this.model,
       document: {
         type: "image_url", // Use image_url type for base64 data
         imageUrl: `data:${mimeType};base64,${base64Data}`
-      },
-      includeImageBase64: this.includeImages
-    });
+      }
+    };
+
+    // Handle .docx files specifically - they require image_limit=0 if not including images
+    if (validation.fileType === '.docx') {
+      if (this.includeImages) {
+        ocrParams.includeImageBase64 = true;
+        // For .docx with images, images are returned in base64 format
+      } else {
+        ocrParams.imageLimit = 0; // Don't include images for .docx files
+      }
+    } else {
+      // For other file types, use the standard includeImageBase64 parameter
+      ocrParams.includeImageBase64 = this.includeImages;
+      if (!this.includeImages) {
+        ocrParams.imageLimit = 0;
+      }
+    }
+
+    // Use the OCR API with base64 data URL
+    const ocrResponse = await this.client.ocr.process(ocrParams);
 
     // Process the OCR response
     const results = this.processOCRResponse(ocrResponse, filePath, options);

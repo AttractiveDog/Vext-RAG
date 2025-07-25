@@ -103,10 +103,24 @@ router.post('/ingest', async (req, res) => {
         });
       }
 
+      // Validate user ID
+      const userId = req.body.userId || req.query.userId;
+      if (!userId) {
+        console.error('❌ User ID is required');
+        return res.status(400).json({
+          error: 'User ID is required',
+          timestamp: new Date().toISOString()
+        });
+      }
+
       const filePath = req.file.path;
       const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : {};
       
+      // Add user ID to metadata
+      metadata.userId = userId;
+      
       console.log('📝 Processing file:', req.file.filename);
+      console.log('👤 User ID:', userId);
 
       // Validate file
       console.log('⚡ Validating file...');
@@ -238,7 +252,7 @@ router.post('/ingest', async (req, res) => {
  */
 router.post('/query', async (req, res) => {
   try {
-    const { question, topK = 10, temperature } = req.body;
+    const { question, topK = 10, temperature, userId } = req.body;
 
     if (!question || typeof question !== 'string') {
       return res.status(400).json({
@@ -247,15 +261,22 @@ router.post('/query', async (req, res) => {
       });
     }
 
-    console.log(`Processing query: "${question}"`);
+    if (!userId) {
+      return res.status(400).json({
+        error: 'User ID is required',
+        timestamp: new Date().toISOString()
+      });
+    }
 
-    // Search for relevant documents with query expansion
-    let searchResults = await vectorService.searchDocuments(question, topK);
+    console.log(`Processing query: "${question}" for user: ${userId}`);
+
+    // Search for relevant documents with query expansion (filtered by user)
+    let searchResults = await vectorService.searchDocuments(question, topK, { userId });
     
     // If we don't get enough results or the question is about pricing, try expanded search
     if (searchResults.length < 3 || question.toLowerCase().includes('pricing') || question.toLowerCase().includes('cost')) {
       const expandedQuery = question + ' pricing cost price fee rate';
-      const expandedResults = await vectorService.searchDocuments(expandedQuery, topK);
+      const expandedResults = await vectorService.searchDocuments(expandedQuery, topK, { userId });
       
       // Merge results, removing duplicates
       const allResults = [...searchResults];
@@ -418,18 +439,31 @@ router.post('/query', async (req, res) => {
 
 /**
  * GET /api/documents
- * List all ingested documents
+ * List all ingested documents (grouped by parent document)
  */
 router.get('/documents', async (req, res) => {
   try {
-    const documents = await vectorService.getAllDocuments();
-    const stats = await vectorService.getCollectionStats();
+    const { userId } = req.query;
+    
+    if (!userId) {
+      return res.status(400).json({
+        error: 'User ID is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const groupedDocuments = await vectorService.getGroupedDocuments(userId);
+    const stats = await vectorService.getCollectionStats(userId);
 
     res.json({
       success: true,
       data: {
-        documents,
-        stats
+        documents: groupedDocuments,
+        stats: {
+          ...stats,
+          totalDocuments: groupedDocuments.length,
+          totalChunks: stats.totalDocuments
+        }
       },
       timestamp: new Date().toISOString()
     });
@@ -445,11 +479,12 @@ router.get('/documents', async (req, res) => {
 
 /**
  * DELETE /api/documents/:id
- * Delete a specific document
+ * Delete a specific document (all chunks of the parent document)
  */
 router.delete('/documents/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const { userId } = req.query;
 
     if (!id) {
       return res.status(400).json({
@@ -458,12 +493,39 @@ router.delete('/documents/:id', async (req, res) => {
       });
     }
 
-    await vectorService.deleteDocument(id);
+    if (!userId) {
+      return res.status(400).json({
+        error: 'User ID is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Get all documents to find chunks belonging to this parent document (filtered by user)
+    const allDocuments = await vectorService.getAllDocuments(userId);
+    const chunksToDelete = allDocuments.filter(doc => 
+      doc.metadata.documentId === id || doc.metadata.parentDocumentId === id
+    );
+
+    if (chunksToDelete.length === 0) {
+      return res.status(404).json({
+        error: 'Document not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Delete all chunks of the parent document
+    const chunkIds = chunksToDelete.map(chunk => chunk.id);
+    for (const chunkId of chunkIds) {
+      await vectorService.deleteDocument(chunkId);
+    }
 
     res.json({
       success: true,
-      message: 'Document deleted successfully',
-      data: { documentId: id },
+      message: 'Document and all its chunks deleted successfully',
+      data: { 
+        documentId: id,
+        chunksDeleted: chunkIds.length
+      },
       timestamp: new Date().toISOString()
     });
 
@@ -482,9 +544,16 @@ router.delete('/documents/:id', async (req, res) => {
  */
 router.post('/summarize', async (req, res) => {
   try {
-    const { maxTokens } = req.body;
+    const { maxTokens, userId } = req.body;
 
-    const documents = await vectorService.getAllDocuments();
+    if (!userId) {
+      return res.status(400).json({
+        error: 'User ID is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const documents = await vectorService.getAllDocuments(userId);
     
     if (documents.length === 0) {
       return res.status(404).json({
@@ -522,9 +591,16 @@ router.post('/summarize', async (req, res) => {
  */
 router.post('/topics', async (req, res) => {
   try {
-    const { maxTokens } = req.body;
+    const { maxTokens, userId } = req.body;
 
-    const documents = await vectorService.getAllDocuments();
+    if (!userId) {
+      return res.status(400).json({
+        error: 'User ID is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const documents = await vectorService.getAllDocuments(userId);
     
     if (documents.length === 0) {
       return res.status(404).json({
@@ -562,16 +638,33 @@ router.post('/topics', async (req, res) => {
  */
 router.get('/stats', async (req, res) => {
   try {
+    const { userId } = req.query;
+    
+    if (!userId) {
+      return res.status(400).json({
+        error: 'User ID is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
     const [vectorStats, vextValid, aiValid] = await Promise.all([
-      vectorService.getCollectionStats(),
+      vectorService.getCollectionStats(userId),
       vextService.validateService(),
       aiService.validateService()
     ]);
 
+    // Get actual document count (grouped by parent documents)
+    const groupedDocuments = await vectorService.getGroupedDocuments(userId);
+    const actualDocumentCount = groupedDocuments.length;
+
     res.json({
       success: true,
       data: {
-        vectorDatabase: vectorStats,
+        vectorDatabase: {
+          ...vectorStats,
+          totalDocuments: actualDocumentCount,
+          totalChunks: vectorStats.totalDocuments
+        },
         services: {
           vext: vextValid,
           ai: aiValid
@@ -597,7 +690,16 @@ router.get('/stats', async (req, res) => {
  */
 router.post('/clear', async (req, res) => {
   try {
-    await vectorService.clearCollection();
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({
+        error: 'User ID is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    await vectorService.clearCollection(userId);
 
     res.json({
       success: true,
@@ -774,6 +876,15 @@ router.post('/ocr/process', async (req, res) => {
         });
       }
 
+      // Validate user ID
+      const userId = req.body.userId || req.query.userId;
+      if (!userId) {
+        return res.status(400).json({
+          error: 'User ID is required',
+          timestamp: new Date().toISOString()
+        });
+      }
+
       try {
         const filePath = req.file.path;
         const options = req.body.options ? JSON.parse(req.body.options) : {};
@@ -832,6 +943,15 @@ router.post('/ocr/analyze', async (req, res) => {
       if (!req.file) {
         return res.status(400).json({
           error: 'No file uploaded',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Validate user ID
+      const userId = req.body.userId || req.query.userId;
+      if (!userId) {
+        return res.status(400).json({
+          error: 'User ID is required',
           timestamp: new Date().toISOString()
         });
       }
@@ -924,10 +1044,22 @@ router.post('/ocr/ingest', async (req, res) => {
         });
       }
 
+      // Validate user ID
+      const userId = req.body.userId || req.query.userId;
+      if (!userId) {
+        return res.status(400).json({
+          error: 'User ID is required',
+          timestamp: new Date().toISOString()
+        });
+      }
+
       try {
         const filePath = req.file.path;
         const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : {};
         const options = req.body.options ? JSON.parse(req.body.options) : {};
+        
+        // Add user ID to metadata
+        metadata.userId = userId;
 
         // Process with OCR
         const ocrResult = await ocrService.processFile(filePath, {

@@ -1,5 +1,111 @@
 [
   {
+    "id": "q_1753427611481_i2pa771f3",
+    "timestamp": "2025-07-25T07:13:31.481Z",
+    "question": "what is in the context that u got?",
+    "answer": "The context provided consists of three documents detailing features and functionalities related to an AI-powered meeting assistant and related tools.\n\n### Document 1:\nThis document outlines various features related to productivity and analytics, including:\n- Progress tracking and completion analytics\n- Integration with calendar and meeting data\n- Comprehensive analytics dashboard\n- Productivity scoring and trend analysis\n- Time allocation insights with visual breakdowns\n- Meeting efficiency metrics\n- Email response time tracking\n- Goal progress monitoring\n- Calendar integration and management, including Google Calendar synchronization\n- Smart scheduling suggestions and meeting optimization recommendations\n\n### Document 2:\nThis document briefly mentions an AI assistant and references a talking (notetaker) bot called Attendee.dev, alongside Google Cloud APIs for calendar, emails, and contacts.\n\n### Document 3:\nThis document provides an extensive overview of core platform features, including:\n- AI-powered meeting assistant\n- Voice-enabled meeting bots that can join meetings in real-time\n- Real-time transcription and analysis\n- Intelligent note-taking with action item extraction\n- Meeting summarization and follow-up generation\n- Support for multiple platforms like Zoom, Google Meet, and Microsoft Teams\n- Advanced email management, including AI-powered email prioritization and smart email composition\n- Task management features with AI-generated tasks from meeting transcripts and emails\n\nOverall, the context highlights a comprehensive suite of tools designed to enhance productivity, improve meeting efficiency, and streamline communication through advanced AI capabilities.\n\nIf you have specific questions about a feature or need more detailed information, feel free to ask!",
+    "sources": [
+      {
+        "text": "n context and deadlines\n16. Progress tracking and completion analytics\n17. Integration with calendar and meeting data\n18. Comprehensive Analytics Dashboard\n19. Productivity scoring and trend analysis\n...",
+        "metadata": {
+          "id": "9f572f05-b7fb-4997-af84-336fa7ebfd12_chunk_1",
+          "text": "n context and deadlines\n16. Progress tracking and completion analytics\n17. Integration with calendar and meeting data\n18. Comprehensive Analytics Dashboard\n19. Productivity scoring and trend analysis\n20. Time allocation insights with visual breakdowns\n21. Meeting efficiency metrics\n22. Email response time tracking\n23. Goal progress monitoring\n24. Calendar Integration \\& Management\n25. Google Calendar synchronization\n26. Smart scheduling suggestions\n27. Meeting optimization recommendations\n28. Time block management",
+          "similarity": 0.44310033000000004,
+          "chunkIndex": 1,
+          "chunkNumber": 2,
+          "originalFilename": "file-1753427487577-23085316-Untitled document.pdf",
+          "documentId": "9f572f05-b7fb-4997-af84-336fa7ebfd12",
+          "totalScore": 1.25738328
+        },
+        "relevance": 0
+      },
+      {
+        "text": "scription/Recordings/Talking(notetaker) Bot - Attendee.dev\n6. Al Assistant - Pipedream\n7. Calendar/Emails/Contacts/OAuth - Google Cloud APIs...",
+        "metadata": {
+          "id": "9f572f05-b7fb-4997-af84-336fa7ebfd12_chunk_3",
+          "text": "scription/Recordings/Talking(notetaker) Bot - Attendee.dev\n6. Al Assistant - Pipedream\n7. Calendar/Emails/Contacts/OAuth - Google Cloud APIs",
+          "similarity": 0.41919255,
+          "chunkIndex": 3,
+          "chunkNumber": 4,
+          "originalFilename": "file-1753427487577-23085316-Untitled document.pdf",
+          "documentId": "9f572f05-b7fb-4997-af84-336fa7ebfd12",
+          "totalScore": 1.25738328
+        },
+        "relevance": 0
+      },
+      {
+        "text": "1. Core Platform Features\n\n1. AI-Powered Meeting Assistant\n2. Voice-enabled meeting bots that join meetings in real-time\n3. Real-time transcription and analysis using Deepgram and Attendee APIs\n4. Int...",
+        "metadata": {
+          "id": "9f572f05-b7fb-4997-af84-336fa7ebfd12_chunk_0",
+          "text": "1. Core Platform Features\n\n1. AI-Powered Meeting Assistant\n2. Voice-enabled meeting bots that join meetings in real-time\n3. Real-time transcription and analysis using Deepgram and Attendee APIs\n4. Intelligent note-taking with action item extraction\n5. Meeting summarization and follow-up generation\n6. Multi-platform support: Zoom, Google Meet, Microsoft Teams\n7. Advanced Email Management\n8. AI-powered email prioritization using Groq's Llama3 models\n9. Smart email composition with context-aware responses\n10. Email pattern analysis and productivity insights\n11. Automated follow-up generation\n12. Batch email processing for efficiency\n13. Intelligent Task Management\n14. AI-generated tasks from meeting transcripts and emails\n15. Smart task prioritization based on context and deadlines\n16. Progress tracking and completion analytics\n17. Integration with calendar and meeting data\n18. Comprehensive Analytics Dashboard\n19. Productivity scoring and trend analysis",
+          "similarity": 0.39509039999999995,
+          "chunkIndex": 0,
+          "chunkNumber": 1,
+          "originalFilename": "file-1753427487577-23085316-Untitled document.pdf",
+          "documentId": "9f572f05-b7fb-4997-af84-336fa7ebfd12",
+          "totalScore": 1.25738328
+        },
+        "relevance": 0
+      }
+    ],
+    "confidence": 1,
+    "model": "gpt-4o-mini",
+    "tokens": 1813
+  },
+  {
+    "id": "q_1753427579849_jcoinwuvo",
+    "timestamp": "2025-07-25T07:12:59.849Z",
+    "question": "what is in the context that u got?",
+    "answer": "The context provided consists of three documents that detail various student registration and educational information, primarily focusing on academic details and personal background.\n\n1. **Document 1**: This document includes a table summarizing educational qualifications and details about family background. It lists various academic programs such as B.TECH, M.TECH, M.SC., etc., indicating a framework for educational qualifications. It also includes a family detail table, highlighting one individual, Durgeshwar Mishra, who is a teacher with a monthly income of ₹4,500.\n\n2. **Document 2**: This document elaborates on the education details of a student. It lists qualifications from high school to potential future degrees like B.TECH and M.C.A., but does not provide specific details on completed degrees or institutions. It includes information about the student's permanent residence in Varanasi, Uttar Pradesh, and mentions their educational journey through institutions affiliated with CBSE (Central Board of Secondary Education).\n\n3. **Document 3**: The third document focuses on a specific student named Vedansh Mishra, detailing his registration for a BS-MS program in Mathematics and Data Science at HBTU Kanpur. It provides personal details, contact information, and relevant academic examination results (like JEE MAINS). It also notes the student’s category and rank in the entrance examination.\n\nOverall, the context reveals a structured approach to student registration for higher education institutions in India, including academic qualifications, family background, and personal details of students. Each document serves to outline different aspects of a student's educational journey and registration process.\n\nIf you have specific questions about any of these areas or need more detailed information, feel free to ask!",
+    "sources": [
+      {
+        "text": "A. |  |  |  |  |  |  |\n| B.TECH. |  |  |  |  |  |  |\n| MCA |  |  |  |  |  |  |\n| M.TECH. |  |  |  |  |  |  |\n| M.SC. |  |  |  |  |  |  |\n| OTHER UG |  |  |  |  |  |  |\n| OTHER PG |  |  |  |  |  |  |\n\n...",
+        "metadata": {
+          "id": "c64d5c8c-388d-449b-bee9-b620d9be0fad_chunk_3",
+          "text": "A. |  |  |  |  |  |  |\n| B.TECH. |  |  |  |  |  |  |\n| MCA |  |  |  |  |  |  |\n| M.TECH. |  |  |  |  |  |  |\n| M.SC. |  |  |  |  |  |  |\n| OTHER UG |  |  |  |  |  |  |\n| OTHER PG |  |  |  |  |  |  |\n\nIf GATE score holder (in case of M.TEch. give the GATE Score : ) OR If UGC/CSIR-NET (JRF) score holder (in case of Ph.D. give the Score :)\n0.0\n0\n\nFamily Detail\nFamily Background\n\n| SL <br> No. | Name | Relationship | Age | Address | Educational <br> Qualification | Professional <br> Qualification | Earning <br> Status | Occupation | Organization | Income <br> Per <br> Month |\n| :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |\n| 1 | Durgeshwar <br> Mishra | Father | 47 | Village - <br> Dhobahi, <br> Lutha <br> Kala, <br> Varanasi, <br> Uttar <br> Pradesh | M.Sc | Teacher | Working | Others | Resonance | $\\mathbf{4 5 0 0}$ |",
+          "similarity": 0.4691628,
+          "chunkIndex": 3,
+          "chunkNumber": 4,
+          "originalFilename": "file-1753427514510-61740358-erp-student-registration-form.pdf",
+          "documentId": "c64d5c8c-388d-449b-bee9-b620d9be0fad",
+          "totalScore": 1.35184267
+        },
+        "relevance": 0
+      },
+      {
+        "text": "bahi, Lutha Kala, Varanasi, Uttar Pradesh\n\nState\nUTTAR PRADESH\nZipCode\n221104\nNearest Railway Station to the place of permanent resident\nVaranasi Cantt\n\n# Education Details \n\nEducation Qualification\n\n...",
+        "metadata": {
+          "id": "c64d5c8c-388d-449b-bee9-b620d9be0fad_chunk_2",
+          "text": "bahi, Lutha Kala, Varanasi, Uttar Pradesh\n\nState\nUTTAR PRADESH\nZipCode\n221104\nNearest Railway Station to the place of permanent resident\nVaranasi Cantt\n\n# Education Details \n\nEducation Qualification\n\n| Qualification(s) | Board / <br> University | Roll No. | Year | Name \\& Address of Institution Studied | Division | Subjects |\n| :--: | :--: | :--: | :--: | :--: | :--: | :--: |\n| HIGH SCHOOL | CBSE | 23278026 | 2023 | St. Joseph's School, Shaktinagar, Sonbhadra, Uttar Pradesh | B1 | Math, Science, Social Science, English, Hindi |\n| INTERMEDIATE | CBSE | 23776535 | 2025 | St. Joseph's School, Shaktinagar, Sonbhadra, Uttar Pradesh | B2 | Physics, Chemistry, Math, English, IP |\n| DIPLOMA ( 3 <br> YEARS ) |  |  |  |  |  |  |\n| B.SC. |  |  |  |  |  |  |\n| B.C.A. |  |  |  |  |  |  |\n| B.TECH. |  |  |  |  |  |  |\n| MCA |  |  |  |  |  |  |\n| M.TECH. |  |  |  |  |  |  |\n| M.SC. |  |  |  |  |  |  |\n| OTHER UG |  |  |  |  |  |  |\n| OTHER PG |  |  |  |  |  |  |",
+          "similarity": 0.45675639999999995,
+          "chunkIndex": 2,
+          "chunkNumber": 3,
+          "originalFilename": "file-1753427514510-61740358-erp-student-registration-form.pdf",
+          "documentId": "c64d5c8c-388d-449b-bee9-b620d9be0fad",
+          "totalScore": 1.35184267
+        },
+        "relevance": 0
+      },
+      {
+        "text": "# HBTU Kanpur \n\n## Student Registration Form\n\n## Academics Details\n\nEnrollment No\nEnrollment Pending\nBranch\nMathematics and Data Science\nCurrent Semester\nI\n\nStudent Name\nVEDANSH MISHRA\nDate of Birth\n1...",
+        "metadata": {
+          "id": "c64d5c8c-388d-449b-bee9-b620d9be0fad_chunk_0",
+          "text": "# HBTU Kanpur \n\n## Student Registration Form\n\n## Academics Details\n\nEnrollment No\nEnrollment Pending\nBranch\nMathematics and Data Science\nCurrent Semester\nI\n\nStudent Name\nVEDANSH MISHRA\nDate of Birth\n10 Feb 2008\nContact No.\n7379885334\nPersonal Email\naltvedansh@gmail.com\nCategory\nGEN-EWS\nFee Waiver\nYes\nIdentification Mark\nMole on forehead\nHostel Required.?\nHostel\nNationality\nIndian\n\nProgramme\nBS-MS Mathematics and Data Science\nAdmission Source\nJEE MAINS\n\n## Personal Details\n\nStudent Name in Hindi\nवेदांशा मिश्रा\nGender\nMale\nAlternat Contact No.\n0\nHBTU Email\n\nSub Category\n\nBlood Group\nB+\nAdhaar Card No\n236453267323\nMode of Transport\nWalker\nReligion\nHindu\n\n## Entrance Examination Details\n\nEntrance Exam\nJEE MAINS\nRoll No / Application Number\n250310991301\nCategory Rank\n30002\n\nFather Name\nDurgeshwar Mishra\nMother Name\nShashi Bala Mishra\nParent's Mail ID\n\nYear\n2025\nAIR Rank\n206760\nSeat Allot in Category\nOPEN-EWS\n\n## Parents Details\n\nFather's Contact No.\n7379885334\nLandline No.\n\nAddress",
+          "similarity": 0.42592346999999997,
+          "chunkIndex": 0,
+          "chunkNumber": 1,
+          "originalFilename": "file-1753427514510-61740358-erp-student-registration-form.pdf",
+          "documentId": "c64d5c8c-388d-449b-bee9-b620d9be0fad",
+          "totalScore": 1.35184267
+        },
+        "relevance": 0
+      }
+    ],
+    "confidence": 1,
+    "model": "gpt-4o-mini",
+    "tokens": 3234
+  },
+  {
     "id": "q_1753394206478_phy9xjapy",
     "timestamp": "2025-07-24T21:56:46.478Z",
     "question": "tell me all the dates in that document",

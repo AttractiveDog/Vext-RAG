@@ -376,6 +376,28 @@
         </div>
 
         <div class="main">
+            <!-- User ID Section -->
+            <div class="section">
+                <h2>👤 User Identification</h2>
+                <div class="form-group">
+                    <label for="userId">User ID:</label>
+                    <input type="text" id="userId" placeholder="Enter your user ID (required for all operations)" required>
+                    <p style="margin-top: 8px; font-size: 14px; color: #666;">
+                        <strong>Note:</strong> All documents and queries are isolated by user ID. 
+                        Use a unique identifier to keep your data separate from other users.
+                    </p>
+                    <div style="margin-top: 15px; padding: 15px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #1976d2;">
+                        <strong>🚀 Getting Started:</strong>
+                        <ol style="margin: 10px 0 0 20px; color: #333;">
+                            <li>Enter your unique User ID above</li>
+                            <li>Upload documents using the Upload Documents section</li>
+                            <li>Ask questions about your documents</li>
+                            <li>View your documents and statistics</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
             <!-- Document Upload Section -->
             <div class="section">
                 <h2>📄 Upload Documents</h2>
@@ -480,7 +502,13 @@
         async function uploadDocument() {
             const fileInput = document.getElementById('file');
             const metadataInput = document.getElementById('metadata');
+            const userIdInput = document.getElementById('userId');
             const resultDiv = document.getElementById('uploadResult');
+
+            if (!userIdInput.value.trim()) {
+                showResult(resultDiv, 'Please enter a User ID before uploading documents.', 'error');
+                return;
+            }
 
             if (!fileInput.files[0]) {
                 showResult(resultDiv, 'Please select a file to upload.', 'error');
@@ -489,6 +517,7 @@
 
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
+            formData.append('userId', userIdInput.value.trim());
             
             if (metadataInput.value.trim()) {
                 try {
@@ -540,7 +569,13 @@
             const question = document.getElementById('question').value.trim();
             const model = document.getElementById('model').value;
             const topK = document.getElementById('topK').value;
+            const userId = document.getElementById('userId').value.trim();
             const resultDiv = document.getElementById('queryResult');
+
+            if (!userId) {
+                showResult(resultDiv, 'Please enter a User ID before asking questions.', 'error');
+                return;
+            }
 
             if (!question) {
                 showResult(resultDiv, 'Please enter a question.', 'error');
@@ -558,7 +593,8 @@
                     body: JSON.stringify({
                         question,
                         model,
-                        topK: parseInt(topK)
+                        topK: parseInt(topK),
+                        userId
                     })
                 });
 
@@ -593,11 +629,18 @@
         }
 
         async function loadStats() {
+            const userId = document.getElementById('userId').value.trim();
             const resultDiv = document.getElementById('statsResult');
+            
+            if (!userId) {
+                showResult(resultDiv, 'Please enter a User ID to view statistics.', 'error');
+                return;
+            }
+            
             showLoading(resultDiv);
 
             try {
-                const response = await fetch(`${API_BASE}/stats`);
+                const response = await fetch(`${API_BASE}/stats?userId=${encodeURIComponent(userId)}`);
                 const result = await response.json();
 
                 if (result.success) {
@@ -607,6 +650,10 @@
                             <div class="stat-card">
                                 <div class="stat-number">${stats.vectorDatabase.totalDocuments}</div>
                                 <div class="stat-label">Total Documents</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number">${stats.vectorDatabase.totalChunks}</div>
+                                <div class="stat-label">Total Chunks</div>
                             </div>
                             <div class="stat-card">
                                 <div class="stat-number">${stats.services.vext ? '✓' : '✗'}</div>
@@ -632,30 +679,41 @@
         }
 
         async function loadDocuments() {
+            const userId = document.getElementById('userId').value.trim();
             const resultDiv = document.getElementById('documentsResult');
+            
+            if (!userId) {
+                showResult(resultDiv, 'Please enter a User ID to view documents.', 'error');
+                return;
+            }
+            
             showLoading(resultDiv);
 
             try {
-                const response = await fetch(`${API_BASE}/documents`);
+                const response = await fetch(`${API_BASE}/documents?userId=${encodeURIComponent(userId)}`);
                 const result = await response.json();
 
                 if (result.success) {
                     const documents = result.data.documents;
+                    const stats = result.data.stats;
+                    
                     if (documents.length === 0) {
                         showResult(resultDiv, 'No documents found.', 'success');
                     } else {
                         const html = `
                             <h3>Documents (${documents.length}):</h3>
+                            <p><small>Total chunks: ${stats.totalChunks}</small></p>
                             ${documents.map((doc, i) => `
                                 <div style="margin: 10px 0; padding: 15px; background: white; border-radius: 5px; border: 1px solid #e1e5e9; position: relative;">
                                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                                         <div style="flex: 1;">
-                                            <strong>${doc.metadata.filename || `Document ${i + 1}`}</strong><br>
-                                            <small>Type: ${doc.metadata.fileType || 'Unknown'}</small><br>
-                                            <small>Words: ${doc.metadata.wordCount || 'Unknown'}</small><br>
-                                            <small>ID: ${doc.id}</small>
+                                            <strong>${doc.originalFilename}</strong><br>
+                                            <small>Type: ${doc.fileType}</small><br>
+                                            <small>Words: ${doc.totalWords}</small><br>
+                                            <small>Chunks: ${doc.totalChunks}</small><br>
+                                            <small>ID: ${doc.documentId}</small>
                                         </div>
-                                        <button class="btn" onclick="deleteDocument('${doc.id}', '${doc.metadata.filename || `Document ${i + 1}`}')" style="background: #e74c3c; padding: 8px 12px; font-size: 14px;">Delete</button>
+                                        <button class="btn" onclick="deleteDocument('${doc.documentId}', '${doc.originalFilename}')" style="background: #e74c3c; padding: 8px 12px; font-size: 14px;">Delete</button>
                                     </div>
                                 </div>
                             `).join('')}
@@ -675,11 +733,18 @@
                 return;
             }
 
+            const userId = document.getElementById('userId').value.trim();
             const resultDiv = document.getElementById('documentsResult');
+            
+            if (!userId) {
+                showResult(resultDiv, 'Please enter a User ID to delete documents.', 'error');
+                return;
+            }
+            
             showLoading(resultDiv);
 
             try {
-                const response = await fetch(`${API_BASE}/documents/${documentId}`, {
+                const response = await fetch(`${API_BASE}/documents/${documentId}?userId=${encodeURIComponent(userId)}`, {
                     method: 'DELETE'
                 });
                 const result = await response.json();
@@ -703,12 +768,23 @@
                 return;
             }
 
+            const userId = document.getElementById('userId').value.trim();
             const resultDiv = document.getElementById('documentsResult');
+            
+            if (!userId) {
+                showResult(resultDiv, 'Please enter a User ID to clear documents.', 'error');
+                return;
+            }
+            
             showLoading(resultDiv);
 
             try {
                 const response = await fetch(`${API_BASE}/clear`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ userId })
                 });
                 const result = await response.json();
 
@@ -739,14 +815,21 @@
             `;
         }
 
-        // Load stats on page load
+        // Load stats on page load (only if user ID is provided)
         window.addEventListener('load', () => {
-            loadStats();
-            loadRecentQuestions();
+            // Don't auto-load stats and questions since they now require user ID
+            // Users will need to enter their user ID first
         });
 
         async function loadRecentQuestions() {
+            const userId = document.getElementById('userId').value.trim();
             const resultDiv = document.getElementById('recentQuestionsResult');
+            
+            if (!userId) {
+                showResult(resultDiv, 'Please enter a User ID to view recent questions.', 'error');
+                return;
+            }
+            
             showLoading(resultDiv);
 
             try {
@@ -825,7 +908,14 @@
                 return;
             }
 
+            const userId = document.getElementById('userId').value.trim();
             const resultDiv = document.getElementById('recentQuestionsResult');
+            
+            if (!userId) {
+                showResult(resultDiv, 'Please enter a User ID to clear question history.', 'error');
+                return;
+            }
+            
             showLoading(resultDiv);
 
             try {

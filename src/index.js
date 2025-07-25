@@ -23,10 +23,22 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Serve static files (web interface)
 app.use(express.static(join(__dirname, '../public')));
 
-// Configure multer for file uploads
+// Configure multer for file uploads with user-specific directories
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, join(__dirname, '../uploads/'));
+    // Extract user ID from request body or query params
+    const userId = req.body.userId || req.query.userId || 'default';
+    
+    // Create user-specific upload directory
+    const userUploadDir = join(__dirname, '../uploads/', userId);
+    
+    // Ensure the directory exists
+    import('fs').then(fs => {
+      fs.mkdirSync(userUploadDir, { recursive: true });
+      cb(null, userUploadDir);
+    }).catch(err => {
+      cb(err);
+    });
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

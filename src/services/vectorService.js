@@ -567,15 +567,25 @@ class VectorService {
 
   /**
    * Get all documents in the collection
+   * @param {string} userId - User ID to filter by (optional)
    * @returns {Promise<Array<{id: string, text: string, metadata: Object}>>} - All documents
    */
-  async getAllDocuments() {
+  async getAllDocuments(userId = null) {
     try {
       if (!this.collection) {
         await this.initialize();
       }
 
-      const results = await this.collection.get();
+      let results;
+      if (userId) {
+        // Filter by user ID
+        results = await this.collection.get({
+          where: { userId: userId }
+        });
+      } else {
+        // Get all documents
+        results = await this.collection.get();
+      }
       
       return results.ids.map((id, index) => ({
         id: id,
@@ -585,6 +595,58 @@ class VectorService {
     } catch (error) {
       console.error('Error getting all documents:', error);
       throw new Error(`Failed to get documents: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get all documents grouped by parent document
+   * @param {string} userId - User ID to filter by (optional)
+   * @returns {Promise<Array<{documentId: string, originalFilename: string, fileType: string, totalChunks: number, totalWords: number, totalCharacters: number, processedAt: string, chunks: Array}>>} - Grouped documents
+   */
+  async getGroupedDocuments(userId = null) {
+    try {
+      const allChunks = await this.getAllDocuments(userId);
+      
+      // Group chunks by parent document
+      const documentGroups = {};
+      
+      allChunks.forEach(chunk => {
+        const parentDocId = chunk.metadata.documentId || chunk.metadata.parentDocumentId;
+        const originalFilename = chunk.metadata.originalFilename || chunk.metadata.filename || 'Unknown Document';
+        
+        if (!documentGroups[parentDocId]) {
+          documentGroups[parentDocId] = {
+            documentId: parentDocId,
+            originalFilename: originalFilename,
+            fileType: chunk.metadata.fileType || 'Unknown',
+            totalChunks: 0,
+            totalWords: 0,
+            totalCharacters: 0,
+            processedAt: chunk.metadata.processedAt,
+            chunks: []
+          };
+        }
+        
+        documentGroups[parentDocId].chunks.push({
+          id: chunk.id,
+          text: chunk.text,
+          chunkIndex: chunk.metadata.chunkIndex || 0,
+          chunkNumber: chunk.metadata.chunkNumber || 1,
+          wordCount: chunk.metadata.wordCount || chunk.text.split(/\s+/).length,
+          characterCount: chunk.text.length
+        });
+        
+        documentGroups[parentDocId].totalChunks++;
+        documentGroups[parentDocId].totalWords += chunk.metadata.wordCount || chunk.text.split(/\s+/).length;
+        documentGroups[parentDocId].totalCharacters += chunk.text.length;
+      });
+
+      // Convert to array and sort by processing time
+      return Object.values(documentGroups)
+        .sort((a, b) => new Date(b.processedAt) - new Date(a.processedAt));
+    } catch (error) {
+      console.error('Error getting grouped documents:', error);
+      throw new Error(`Failed to get grouped documents: ${error.message}`);
     }
   }
 
@@ -638,20 +700,30 @@ class VectorService {
 
   /**
    * Get collection statistics
+   * @param {string} userId - User ID to filter by (optional)
    * @returns {Promise<Object>} - Collection statistics
    */
-  async getCollectionStats() {
+  async getCollectionStats(userId = null) {
     try {
       if (!this.collection) {
         await this.initialize();
       }
 
-      const count = await this.collection.count();
+      let count;
+      if (userId) {
+        // Get count for specific user
+        const userDocuments = await this.getAllDocuments(userId);
+        count = userDocuments.length;
+      } else {
+        // Get total count
+        count = await this.collection.count();
+      }
       
       return {
         totalDocuments: count,
         collectionName: this.collectionName,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
+        userId: userId || 'all'
       };
     } catch (error) {
       console.error('Error getting collection stats:', error);
@@ -661,78 +733,98 @@ class VectorService {
 
   /**
    * Clear all documents from the collection
+   * @param {string} userId - User ID to clear documents for (optional, clears all if not provided)
    * @returns {Promise<boolean>} - Success status
    */
-  async clearCollection() {
+  async clearCollection(userId = null) {
     try {
       if (!this.collection) {
         await this.initialize();
       }
 
-      console.log('🔄 Starting collection clear...');
+      if (userId) {
+        console.log(`🔄 Starting collection clear for user: ${userId}...`);
+        
+        // Get documents for specific user
+        const userDocuments = await this.getAllDocuments(userId);
+        console.log(`📊 Found ${userDocuments.length} documents to clear for user: ${userId}`);
 
-      // Try a simpler approach first - delete the entire collection and recreate it
-      try {
-        console.log('🗑️ Attempting to delete entire collection...');
-        await this.client.deleteCollection({
-          name: this.collectionName
-        });
-        console.log('✅ Collection deleted successfully');
+        if (userDocuments.length > 0) {
+          // Delete user-specific documents
+          const documentIds = userDocuments.map(doc => doc.id);
+          await this.collection.delete({
+            ids: documentIds
+          });
+          console.log(`✅ Successfully cleared ${userDocuments.length} documents for user: ${userId}`);
+        }
         
-        // Recreate the collection
-        console.log('🔄 Recreating collection...');
-        this.collection = await this.client.createCollection({
-          name: this.collectionName,
-          metadata: {
-            description: 'Vext RAG System Document Collection',
-            created_at: new Date().toISOString()
-          }
-        });
-        
-        console.log('✅ Collection recreated successfully');
         return true;
-        
-      } catch (deleteError) {
-        console.log('⚠️ Could not delete entire collection, trying batch deletion...');
-        
-        // Fallback to batch deletion if collection deletion fails
-        const count = await this.collection.count();
-        console.log(`📊 Found ${count} documents to clear`);
+      } else {
+        console.log('🔄 Starting collection clear for all users...');
 
-        if (count > 0) {
-          // Use smaller batches and add delays to prevent overwhelming the database
-          const batchSize = 100;
-          let offset = 0;
-          let totalDeleted = 0;
+        // Try a simpler approach first - delete the entire collection and recreate it
+        try {
+          console.log('🗑️ Attempting to delete entire collection...');
+          await this.client.deleteCollection({
+            name: this.collectionName
+          });
+          console.log('✅ Collection deleted successfully');
+          
+          // Recreate the collection
+          console.log('🔄 Recreating collection...');
+          this.collection = await this.client.createCollection({
+            name: this.collectionName,
+            metadata: {
+              description: 'Vext RAG System Document Collection',
+              created_at: new Date().toISOString()
+            }
+          });
+          
+          console.log('✅ Collection recreated successfully');
+          return true;
+          
+        } catch (deleteError) {
+          console.log('⚠️ Could not delete entire collection, trying batch deletion...');
+          
+          // Fallback to batch deletion if collection deletion fails
+          const count = await this.collection.count();
+          console.log(`📊 Found ${count} documents to clear`);
 
-          while (offset < count) {
-            try {
-              const batch = await this.collection.get({
-                limit: batchSize,
-                offset: offset
-              });
+          if (count > 0) {
+            // Use smaller batches and add delays to prevent overwhelming the database
+            const batchSize = 100;
+            let offset = 0;
+            let totalDeleted = 0;
 
-              if (batch.ids && batch.ids.length > 0) {
-                await this.collection.delete({
-                  ids: batch.ids
+            while (offset < count) {
+              try {
+                const batch = await this.collection.get({
+                  limit: batchSize,
+                  offset: offset
                 });
-                totalDeleted += batch.ids.length;
-                console.log(`🗑️ Deleted batch of ${batch.ids.length} documents (${totalDeleted}/${count})`);
-                
-                // Add a small delay between batches to prevent overwhelming the database
-                await new Promise(resolve => setTimeout(resolve, 100));
-              }
 
-              offset += batchSize;
-            } catch (batchError) {
-              console.error(`❌ Error deleting batch at offset ${offset}:`, batchError);
-              throw batchError;
+                if (batch.ids && batch.ids.length > 0) {
+                  await this.collection.delete({
+                    ids: batch.ids
+                  });
+                  totalDeleted += batch.ids.length;
+                  console.log(`🗑️ Deleted batch of ${batch.ids.length} documents (${totalDeleted}/${count})`);
+                  
+                  // Add a small delay between batches to prevent overwhelming the database
+                  await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                offset += batchSize;
+              } catch (batchError) {
+                console.error(`❌ Error deleting batch at offset ${offset}:`, batchError);
+                throw batchError;
+              }
             }
           }
-        }
 
-        console.log('✅ Successfully cleared all documents from collection');
-        return true;
+          console.log('✅ Successfully cleared all documents from collection');
+          return true;
+        }
       }
     } catch (error) {
       console.error('❌ Error clearing collection:', error);
@@ -869,8 +961,18 @@ class VectorService {
    */
   async searchDocuments(query, topK = 5, filter = null, minSimilarity = 0) {
     try {
+      // Combine user filter with existing filter
+      let combinedFilter = filter;
+      if (filter && filter.userId) {
+        combinedFilter = { ...filter };
+      } else if (filter) {
+        combinedFilter = { ...filter };
+      } else {
+        combinedFilter = {};
+      }
+      
       // First, search for individual chunks
-      const chunkResults = await this.search(query, topK * 3, filter, minSimilarity);
+      const chunkResults = await this.search(query, topK * 3, combinedFilter, minSimilarity);
       
       // Group results by parent document
       const documentGroups = {};
