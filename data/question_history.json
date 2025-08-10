@@ -1,5 +1,86 @@
 [
   {
+    "id": "q_1754855417477_8qncf44rv",
+    "timestamp": "2025-08-10T19:50:17.477Z",
+    "question": "give me all the dates from the document and show them in table",
+    "answer": "Analyzing the provided structured data, I will extract the dates mentioned within the text. Dates can often be presented in various formats, and I will compile them into a table format for clarity.\n\nHere is a summary of dates found in the documents:\n\n| Document Number | Date Mentioned                                     |\n|------------------|----------------------------------------------------|\n| Document 4       | 20                                                 |\n| Document 26      | 23rd July 2020                                    |\n| Document 24      | Date DD-MM-YYYY                                   |\n| Document 19      | Dated this.........................................|\n| Document 45      | Dated this.........................................|\n| Document 59      | Dated this.........................................|\n\n### Explanation of Findings:\n1. **Document 4**: The date appears in a placeholder format as \"20\", indicating that it was meant to be filled in by the responder.\n2. **Document 26**: The specific date \"23rd July 2020\" is directly mentioned in reference to an office memorandum.\n3. **Document 24**: The phrase \"Date DD-MM-YYYY\" serves as a placeholder for the actual date.\n4. **Document 19**: The phrase \"Dated this...\" is a standard closing line indicating where the date is to be inserted by the signer.\n5. **Document 45**: Similar to Document 19, it includes a placeholder for the date.\n6. **Document 59**: This also contains a placeholder for the date, indicating that the specific date will be filled out by the authorized signatory.\n\n### Conclusion:\nThe extracted dates are mostly placeholders or specific to the document context, showing a standard format used in formal documents. The actual dates are limited, with \"23rd July 2020\" being the only specific date provided. Other mentions are either incomplete or intended to be filled in, indicating that the documents are designed for completion by the bidder or respondent. \n\nIf you need further analysis on specific dates or more context around these entries, feel free to ask!",
+    "sources": [
+      {
+        "text": "with the Time Schedule (Key Dates) for all the Live Tenders released by Bank of Baroda on the home page of bank's e-Tendering Portal on www.tenderwizard.com/BOB.\n1.6.2. Download of Tender Documents\n\nT...",
+        "metadata": {
+          "id": "048c5795-0875-40d3-a570-780c978c5951_chunk_99",
+          "text": "with the Time Schedule (Key Dates) for all the Live Tenders released by Bank of Baroda on the home page of bank's e-Tendering Portal on www.tenderwizard.com/BOB.\n1.6.2. Download of Tender Documents\n\nThe Pre-qualification / Main Bidding Documents are available for free downloading.\n1.6.3. Online Submission of Tender\n\nSubmission of bids will be preceded by Online Submission of Tender with digitally signed Bid Hashes (Seals) within the Tender Time Schedule (Key dates) published in the Detailed Notice Inviting Tender. The Bid Data is to be prepared in the templates provided by the Tendering Authority of BOB. The templates may be either form based, extensible tables and / or upload-able documents. In the formbased type of templates and extensible table type of templates, the bidders are required to enter the data and encrypt the data/documents using the Digital Certificate / Encryption Tool wherever applicable.",
+          "similarity": 0.5273756,
+          "chunkIndex": 99,
+          "chunkNumber": 100,
+          "originalFilename": "file-1754855265091-141641869-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "048c5795-0875-40d3-a570-780c978c5951",
+          "totalScore": 28.812063989999995
+        },
+        "relevance": 0
+      },
+      {
+        "text": "with the schedule of Prices indicated in the Price Bid and made part of this Tender.\n2. If our Bid is accepted, we undertake to comply with the delivery schedule as mentioned in the Tender Document.\n3...",
+        "metadata": {
+          "id": "048c5795-0875-40d3-a570-780c978c5951_chunk_171",
+          "text": "with the schedule of Prices indicated in the Price Bid and made part of this Tender.\n2. If our Bid is accepted, we undertake to comply with the delivery schedule as mentioned in the Tender Document.\n3. We agree to abide by this Tender Offer for 180 days from date of bid opening and our Offer shall remain binding on us and may be accepted by the Bank any time before expiry of the offer.\n4. All 'Bill of Material' line items have been quoted as per requirement in Commercial Bid format without any deviation.\n5. Masked Commercial Bid (Annexure 11) and Commercial Bid (Annexure 12) have been submitted without any deviation. Bill of Materials which have been marked in the masked Commercial Bid is as per the submitted Commercial Bid without any deviation.\n6. This Bid, together with your written acceptance thereof and your notification of award, shall constitute a binding Contract between us.",
+          "similarity": 0.51620775,
+          "chunkIndex": 171,
+          "chunkNumber": 172,
+          "originalFilename": "file-1754855265091-141641869-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "048c5795-0875-40d3-a570-780c978c5951",
+          "totalScore": 28.812063989999995
+        },
+        "relevance": 0
+      },
+      {
+        "text": "rt by month and product.\n7.14 Conversion report by lead source, product. Assisted vs unassisted sales.\n7.15 Drop rates report by product. Third part analytics tools to be used (e.g. Google Analytics)\n...",
+        "metadata": {
+          "id": "048c5795-0875-40d3-a570-780c978c5951_chunk_215",
+          "text": "rt by month and product.\n7.14 Conversion report by lead source, product. Assisted vs unassisted sales.\n7.15 Drop rates report by product. Third part analytics tools to be used (e.g. Google Analytics)\n7.16 Generation of the monthly commission statement (Insurer wise, Business Segment wise etc., New and Renewal Commission break-up). The commission statement generated shall tally with the actual commission income received from the respective insurance companies.\n7.17 Provision to send automated reports periodically based on pre-existing rules \\& configuration\n7.18 Capability to get \"Ready to Generate\" IRDAI Reports as per the prescribed format.\n7.19 Adhoc reports based on demand from bank / regulator / Government of India.\n\n## 8. WORKFLOW AND DOCUMENT MANAGEMENT SYSTEM",
+          "similarity": 0.50801447,
+          "chunkIndex": 215,
+          "chunkNumber": 216,
+          "originalFilename": "file-1754855265091-141641869-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "048c5795-0875-40d3-a570-780c978c5951",
+          "totalScore": 28.812063989999995
+        },
+        "relevance": 0
+      },
+      {
+        "text": "..........by ............................ 20\nYours faithfully,\n\nAuthorized Signatory\nName:\nDesignation:\nBidder's Corporate Name\nAddress\nEmail and Phone \\#\n\n# 2) \n\n## Annexure 06-Pre-Bid Queries Form\n\n...",
+        "metadata": {
+          "id": "048c5795-0875-40d3-a570-780c978c5951_chunk_174",
+          "text": "..........by ............................ 20\nYours faithfully,\n\nAuthorized Signatory\nName:\nDesignation:\nBidder's Corporate Name\nAddress\nEmail and Phone \\#\n\n# 2) \n\n## Annexure 06-Pre-Bid Queries Form\n\n(Please note that all pre-bid queried need to be send by email in excel format only)\n[Please provide your comments on the Terms \\& conditions in this section. You are requested to categorize your comments under appropriate headings such as those pertaining to the Scope of work, Approach, Work plan, Personnel schedule, Curriculum Vitae, Experience in related projects etc. You are also requested to provide a reference of the page number, state the clarification point and the comment/ suggestion/ deviation that you propose as shown below.]\n\nName of the Respondent:\n\nContact Person from Respondent in case of need.\nName :\nTel No:\ne-Mail ID:",
+          "similarity": 0.50722608,
+          "chunkIndex": 174,
+          "chunkNumber": 175,
+          "originalFilename": "file-1754855265091-141641869-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "048c5795-0875-40d3-a570-780c978c5951",
+          "totalScore": 28.812063989999995
+        },
+        "relevance": 0
+      },
+      {
+        "text": "ype of templates and extensible table type of templates, the bidders are required to enter the data and encrypt the data/documents using the Digital Certificate / Encryption Tool wherever applicable.\n...",
+        "metadata": {
+          "id": "048c5795-0875-40d3-a570-780c978c5951_chunk_100",
+          "text": "ype of templates and extensible table type of templates, the bidders are required to enter the data and encrypt the data/documents using the Digital Certificate / Encryption Tool wherever applicable.\n1.6.4. Close for Bidding: After the expiry of the cut-off time of Online Submission of Tender stage to be completed by the Bidders has lapsed, the Tender will be closed by the Tender Authority.\n1.6.5. Online Final Confirmation: After submitting all the documents bidders need to click on \"Final Submission\" tab. System will give pop up \"You have successfully completed your submission\" that assures submission completion.\n1.6.6. Short listing of Bidders for Commercial Bidding Process : The Tendering Authority will first open the Technical Bid documents of all Bidders and after scrutinizing these documents will shortlist the Bidders who are eligible for Commercial Bidding Process. The short-listed Bidders will be intimated by email.",
+          "similarity": 0.50704056,
+          "chunkIndex": 100,
+          "chunkNumber": 101,
+          "originalFilename": "file-1754855265091-141641869-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "048c5795-0875-40d3-a570-780c978c5951",
+          "totalScore": 28.812063989999995
+        },
+        "relevance": 0
+      }
+    ],
+    "confidence": 1,
+    "model": "gpt-4o-mini",
+    "tokens": 31231
+  },
+  {
     "id": "q_1754854557224_u1un21uci",
     "timestamp": "2025-08-10T19:35:57.224Z",
     "question": "give me all the dates in the table",

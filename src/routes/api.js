@@ -271,13 +271,13 @@ router.post('/query', async (req, res) => {
     console.log(`Processing query: "${question}" for user: ${userId}`);
 
     // Check if this is a structured data question
-    const isStructuredDataQuestion = isStructuredDataQuestion(question);
+    const isStructuredData = isStructuredDataQuestion(question);
     
     // Search for relevant documents with query expansion (filtered by user)
     let searchResults = await vectorService.searchDocuments(question, topK, { userId });
     
     // Enhanced search for structured data questions
-    if (isStructuredDataQuestion) {
+    if (isStructuredData) {
       console.log('🔍 Detected structured data question - using enhanced search strategy');
       
       // Add structured data keywords to improve search
