@@ -1,176 +1,326 @@
 [
   {
-    "id": "q_1753427611481_i2pa771f3",
-    "timestamp": "2025-07-25T07:13:31.481Z",
-    "question": "what is in the context that u got?",
-    "answer": "The context provided consists of three documents detailing features and functionalities related to an AI-powered meeting assistant and related tools.\n\n### Document 1:\nThis document outlines various features related to productivity and analytics, including:\n- Progress tracking and completion analytics\n- Integration with calendar and meeting data\n- Comprehensive analytics dashboard\n- Productivity scoring and trend analysis\n- Time allocation insights with visual breakdowns\n- Meeting efficiency metrics\n- Email response time tracking\n- Goal progress monitoring\n- Calendar integration and management, including Google Calendar synchronization\n- Smart scheduling suggestions and meeting optimization recommendations\n\n### Document 2:\nThis document briefly mentions an AI assistant and references a talking (notetaker) bot called Attendee.dev, alongside Google Cloud APIs for calendar, emails, and contacts.\n\n### Document 3:\nThis document provides an extensive overview of core platform features, including:\n- AI-powered meeting assistant\n- Voice-enabled meeting bots that can join meetings in real-time\n- Real-time transcription and analysis\n- Intelligent note-taking with action item extraction\n- Meeting summarization and follow-up generation\n- Support for multiple platforms like Zoom, Google Meet, and Microsoft Teams\n- Advanced email management, including AI-powered email prioritization and smart email composition\n- Task management features with AI-generated tasks from meeting transcripts and emails\n\nOverall, the context highlights a comprehensive suite of tools designed to enhance productivity, improve meeting efficiency, and streamline communication through advanced AI capabilities.\n\nIf you have specific questions about a feature or need more detailed information, feel free to ask!",
+    "id": "q_1754854557224_u1un21uci",
+    "timestamp": "2025-08-10T19:35:57.224Z",
+    "question": "give me all the dates in the table",
+    "answer": "The context provides the following important dates related to the Request for Proposal (RFP) for the Supply, Implementation, and Maintenance of a Digital Insurance solution by Bank of Baroda:\n\n1. **RFP Issuance Date**: 30th April 2022\n2. **Pre-bid Meeting Date**: 10th May 2022 at 04:00 PM\n3. **Last Date of Submission of RFP Response (Closing Date)**: 27th May 2022 at 2:30 PM\n4. **Eligibility Cum Technical Bid Opening Date**: 27th May 2022 at 3:30 PM\n\nThese details can be found in Document 34, which outlines the timeline for the RFP process. The document specifies the dates for the issuance of the RFP, the pre-bid meeting, and the deadlines for submission and bid opening. \n\nIf you need more information on any specific date or related details, feel free to ask!",
     "sources": [
       {
-        "text": "n context and deadlines\n16. Progress tracking and completion analytics\n17. Integration with calendar and meeting data\n18. Comprehensive Analytics Dashboard\n19. Productivity scoring and trend analysis\n...",
+        "text": "with the schedule of Prices indicated in the Price Bid and made part of this Tender.\n2. If our Bid is accepted, we undertake to comply with the delivery schedule as mentioned in the Tender Document.\n3...",
         "metadata": {
-          "id": "9f572f05-b7fb-4997-af84-336fa7ebfd12_chunk_1",
-          "text": "n context and deadlines\n16. Progress tracking and completion analytics\n17. Integration with calendar and meeting data\n18. Comprehensive Analytics Dashboard\n19. Productivity scoring and trend analysis\n20. Time allocation insights with visual breakdowns\n21. Meeting efficiency metrics\n22. Email response time tracking\n23. Goal progress monitoring\n24. Calendar Integration \\& Management\n25. Google Calendar synchronization\n26. Smart scheduling suggestions\n27. Meeting optimization recommendations\n28. Time block management",
-          "similarity": 0.44310033000000004,
-          "chunkIndex": 1,
-          "chunkNumber": 2,
-          "originalFilename": "file-1753427487577-23085316-Untitled document.pdf",
-          "documentId": "9f572f05-b7fb-4997-af84-336fa7ebfd12",
-          "totalScore": 1.25738328
+          "id": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60_chunk_171",
+          "text": "with the schedule of Prices indicated in the Price Bid and made part of this Tender.\n2. If our Bid is accepted, we undertake to comply with the delivery schedule as mentioned in the Tender Document.\n3. We agree to abide by this Tender Offer for 180 days from date of bid opening and our Offer shall remain binding on us and may be accepted by the Bank any time before expiry of the offer.\n4. All 'Bill of Material' line items have been quoted as per requirement in Commercial Bid format without any deviation.\n5. Masked Commercial Bid (Annexure 11) and Commercial Bid (Annexure 12) have been submitted without any deviation. Bill of Materials which have been marked in the masked Commercial Bid is as per the submitted Commercial Bid without any deviation.\n6. This Bid, together with your written acceptance thereof and your notification of award, shall constitute a binding Contract between us.",
+          "similarity": 0.50978395,
+          "chunkIndex": 171,
+          "chunkNumber": 172,
+          "originalFilename": "file-1754854468036-533938313-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60",
+          "totalScore": 27.55904092
         },
         "relevance": 0
       },
       {
-        "text": "scription/Recordings/Talking(notetaker) Bot - Attendee.dev\n6. Al Assistant - Pipedream\n7. Calendar/Emails/Contacts/OAuth - Google Cloud APIs...",
+        "text": "with the Time Schedule (Key Dates) for all the Live Tenders released by Bank of Baroda on the home page of bank's e-Tendering Portal on www.tenderwizard.com/BOB.\n1.6.2. Download of Tender Documents\n\nT...",
         "metadata": {
-          "id": "9f572f05-b7fb-4997-af84-336fa7ebfd12_chunk_3",
-          "text": "scription/Recordings/Talking(notetaker) Bot - Attendee.dev\n6. Al Assistant - Pipedream\n7. Calendar/Emails/Contacts/OAuth - Google Cloud APIs",
-          "similarity": 0.41919255,
-          "chunkIndex": 3,
-          "chunkNumber": 4,
-          "originalFilename": "file-1753427487577-23085316-Untitled document.pdf",
-          "documentId": "9f572f05-b7fb-4997-af84-336fa7ebfd12",
-          "totalScore": 1.25738328
+          "id": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60_chunk_99",
+          "text": "with the Time Schedule (Key Dates) for all the Live Tenders released by Bank of Baroda on the home page of bank's e-Tendering Portal on www.tenderwizard.com/BOB.\n1.6.2. Download of Tender Documents\n\nThe Pre-qualification / Main Bidding Documents are available for free downloading.\n1.6.3. Online Submission of Tender\n\nSubmission of bids will be preceded by Online Submission of Tender with digitally signed Bid Hashes (Seals) within the Tender Time Schedule (Key dates) published in the Detailed Notice Inviting Tender. The Bid Data is to be prepared in the templates provided by the Tendering Authority of BOB. The templates may be either form based, extensible tables and / or upload-able documents. In the formbased type of templates and extensible table type of templates, the bidders are required to enter the data and encrypt the data/documents using the Digital Certificate / Encryption Tool wherever applicable.",
+          "similarity": 0.50458527,
+          "chunkIndex": 99,
+          "chunkNumber": 100,
+          "originalFilename": "file-1754854468036-533938313-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60",
+          "totalScore": 27.55904092
         },
         "relevance": 0
       },
       {
-        "text": "1. Core Platform Features\n\n1. AI-Powered Meeting Assistant\n2. Voice-enabled meeting bots that join meetings in real-time\n3. Real-time transcription and analysis using Deepgram and Attendee APIs\n4. Int...",
+        "text": "al Bid documents of all Bidders and after scrutinizing these documents will shortlist the Bidders who are eligible for Commercial Bidding Process. The short-listed Bidders will be intimated by email.\n...",
         "metadata": {
-          "id": "9f572f05-b7fb-4997-af84-336fa7ebfd12_chunk_0",
-          "text": "1. Core Platform Features\n\n1. AI-Powered Meeting Assistant\n2. Voice-enabled meeting bots that join meetings in real-time\n3. Real-time transcription and analysis using Deepgram and Attendee APIs\n4. Intelligent note-taking with action item extraction\n5. Meeting summarization and follow-up generation\n6. Multi-platform support: Zoom, Google Meet, Microsoft Teams\n7. Advanced Email Management\n8. AI-powered email prioritization using Groq's Llama3 models\n9. Smart email composition with context-aware responses\n10. Email pattern analysis and productivity insights\n11. Automated follow-up generation\n12. Batch email processing for efficiency\n13. Intelligent Task Management\n14. AI-generated tasks from meeting transcripts and emails\n15. Smart task prioritization based on context and deadlines\n16. Progress tracking and completion analytics\n17. Integration with calendar and meeting data\n18. Comprehensive Analytics Dashboard\n19. Productivity scoring and trend analysis",
-          "similarity": 0.39509039999999995,
-          "chunkIndex": 0,
-          "chunkNumber": 1,
-          "originalFilename": "file-1753427487577-23085316-Untitled document.pdf",
-          "documentId": "9f572f05-b7fb-4997-af84-336fa7ebfd12",
-          "totalScore": 1.25738328
+          "id": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60_chunk_101",
+          "text": "al Bid documents of all Bidders and after scrutinizing these documents will shortlist the Bidders who are eligible for Commercial Bidding Process. The short-listed Bidders will be intimated by email.\n1.6.7. Opening of the Commercial Bids: The Bidders may remain present in the office of the Tender Opening Authority at the time of opening of\n\n\n\nCommercial Bids. However, the results of the Commercial Bids i.e. TCO of all bidders shall be made available on the bank's e-procurement portal after the completion of opening process.\n1.6.8. Tender Schedule (Key Dates) : The bidders are strictly advised to follow the Dates and Times as indicated in the Time Schedule in the detailed tender Notice for the Tender. All the online activities are time tracked and the electronic Tendering System enforces time-locks that ensure that no activity or transaction can take place outside the Start and End Dates and time of the stage as defined in the Tender Schedule.",
+          "similarity": 0.4901601,
+          "chunkIndex": 101,
+          "chunkNumber": 102,
+          "originalFilename": "file-1754854468036-533938313-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60",
+          "totalScore": 27.55904092
+        },
+        "relevance": 0
+      },
+      {
+        "text": "and demanded from or otherwise notified to us in writing before the expiry of the said date which will be enforceable against us notwithstanding that the same is or are enforced after the said date.\n4...",
+        "metadata": {
+          "id": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60_chunk_296",
+          "text": "and demanded from or otherwise notified to us in writing before the expiry of the said date which will be enforceable against us notwithstanding that the same is or are enforced after the said date.\n4. You will have the fullest liberty without our consent and without affecting our liabilities under this Bank Guarantee from time to time to vary any of the terms and conditions of the PO and RFP or extend the time of performance of the contract or to postpone for any time or from time to time any of your rights or powers against the Bidder and either to enforce or forbear to enforce any of the terms and conditions of the said PO and RFP and we shall not be released from our liability under Bank Guarantee by exercise of your liberty with reference to matters aforesaid or by reason of any time being given to the Bidder or any other forbearance, act or omission on your part or any indulgence by you to the Bidder or any other act,",
+          "similarity": 0.48869133,
+          "chunkIndex": 296,
+          "chunkNumber": 297,
+          "originalFilename": "file-1754854468036-533938313-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60",
+          "totalScore": 27.55904092
+        },
+        "relevance": 0
+      },
+      {
+        "text": "the electronic Tendering System enforces time-locks that ensure that no activity or transaction can take place outside the Start and End Dates and time of the stage as defined in the Tender Schedule.\n...",
+        "metadata": {
+          "id": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60_chunk_102",
+          "text": "the electronic Tendering System enforces time-locks that ensure that no activity or transaction can take place outside the Start and End Dates and time of the stage as defined in the Tender Schedule.\nAt the sole discretion of the tender Authority, the time schedule of the Tender stages may be extended.\n1.7. Important Points: The Bid hash values are digitally signed using valid Class - III Digital Certificate issued by any Certifying Authority. The bidders are required to obtain Digital Certificate well in advance.\na. The bidder may modify bids before the deadline for Online Submission of Tender as per Time Schedule mentioned in the Tender documents.\nb. This stage will be applicable during both Pre-bid / Pre-qualification and Financial Bidding Processes.",
+          "similarity": 0.48188719999999996,
+          "chunkIndex": 102,
+          "chunkNumber": 103,
+          "originalFilename": "file-1754854468036-533938313-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60",
+          "totalScore": 27.55904092
         },
         "relevance": 0
       }
     ],
     "confidence": 1,
     "model": "gpt-4o-mini",
-    "tokens": 1813
+    "tokens": 31026
   },
   {
-    "id": "q_1753427579849_jcoinwuvo",
-    "timestamp": "2025-07-25T07:12:59.849Z",
-    "question": "what is in the context that u got?",
-    "answer": "The context provided consists of three documents that detail various student registration and educational information, primarily focusing on academic details and personal background.\n\n1. **Document 1**: This document includes a table summarizing educational qualifications and details about family background. It lists various academic programs such as B.TECH, M.TECH, M.SC., etc., indicating a framework for educational qualifications. It also includes a family detail table, highlighting one individual, Durgeshwar Mishra, who is a teacher with a monthly income of ₹4,500.\n\n2. **Document 2**: This document elaborates on the education details of a student. It lists qualifications from high school to potential future degrees like B.TECH and M.C.A., but does not provide specific details on completed degrees or institutions. It includes information about the student's permanent residence in Varanasi, Uttar Pradesh, and mentions their educational journey through institutions affiliated with CBSE (Central Board of Secondary Education).\n\n3. **Document 3**: The third document focuses on a specific student named Vedansh Mishra, detailing his registration for a BS-MS program in Mathematics and Data Science at HBTU Kanpur. It provides personal details, contact information, and relevant academic examination results (like JEE MAINS). It also notes the student’s category and rank in the entrance examination.\n\nOverall, the context reveals a structured approach to student registration for higher education institutions in India, including academic qualifications, family background, and personal details of students. Each document serves to outline different aspects of a student's educational journey and registration process.\n\nIf you have specific questions about any of these areas or need more detailed information, feel free to ask!",
+    "id": "q_1754854539643_9sxyqungr",
+    "timestamp": "2025-08-10T19:35:39.643Z",
+    "question": "give me all the dates in the table",
+    "answer": "The provided context does not contain specific dates in a table format. However, there are mentions of time schedules and key dates related to the tender process in the documents. \n\nFor instance, Document 2 mentions the \"Time Schedule (Key Dates) for all the Live Tenders released by Bank of Baroda,\" and it emphasizes the importance of adhering to these dates. Document 5 also refers to the electronic tendering system enforcing time-locks based on the Start and End Dates defined in the Tender Schedule.\n\nUnfortunately, without specific dates listed in a tabular format, I cannot provide exact dates as requested. If you need more detailed information or specific dates, please refer to the tender documents directly.",
     "sources": [
       {
-        "text": "A. |  |  |  |  |  |  |\n| B.TECH. |  |  |  |  |  |  |\n| MCA |  |  |  |  |  |  |\n| M.TECH. |  |  |  |  |  |  |\n| M.SC. |  |  |  |  |  |  |\n| OTHER UG |  |  |  |  |  |  |\n| OTHER PG |  |  |  |  |  |  |\n\n...",
+        "text": "with the schedule of Prices indicated in the Price Bid and made part of this Tender.\n2. If our Bid is accepted, we undertake to comply with the delivery schedule as mentioned in the Tender Document.\n3...",
         "metadata": {
-          "id": "c64d5c8c-388d-449b-bee9-b620d9be0fad_chunk_3",
-          "text": "A. |  |  |  |  |  |  |\n| B.TECH. |  |  |  |  |  |  |\n| MCA |  |  |  |  |  |  |\n| M.TECH. |  |  |  |  |  |  |\n| M.SC. |  |  |  |  |  |  |\n| OTHER UG |  |  |  |  |  |  |\n| OTHER PG |  |  |  |  |  |  |\n\nIf GATE score holder (in case of M.TEch. give the GATE Score : ) OR If UGC/CSIR-NET (JRF) score holder (in case of Ph.D. give the Score :)\n0.0\n0\n\nFamily Detail\nFamily Background\n\n| SL <br> No. | Name | Relationship | Age | Address | Educational <br> Qualification | Professional <br> Qualification | Earning <br> Status | Occupation | Organization | Income <br> Per <br> Month |\n| :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |\n| 1 | Durgeshwar <br> Mishra | Father | 47 | Village - <br> Dhobahi, <br> Lutha <br> Kala, <br> Varanasi, <br> Uttar <br> Pradesh | M.Sc | Teacher | Working | Others | Resonance | $\\mathbf{4 5 0 0}$ |",
-          "similarity": 0.4691628,
-          "chunkIndex": 3,
-          "chunkNumber": 4,
-          "originalFilename": "file-1753427514510-61740358-erp-student-registration-form.pdf",
-          "documentId": "c64d5c8c-388d-449b-bee9-b620d9be0fad",
-          "totalScore": 1.35184267
+          "id": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60_chunk_171",
+          "text": "with the schedule of Prices indicated in the Price Bid and made part of this Tender.\n2. If our Bid is accepted, we undertake to comply with the delivery schedule as mentioned in the Tender Document.\n3. We agree to abide by this Tender Offer for 180 days from date of bid opening and our Offer shall remain binding on us and may be accepted by the Bank any time before expiry of the offer.\n4. All 'Bill of Material' line items have been quoted as per requirement in Commercial Bid format without any deviation.\n5. Masked Commercial Bid (Annexure 11) and Commercial Bid (Annexure 12) have been submitted without any deviation. Bill of Materials which have been marked in the masked Commercial Bid is as per the submitted Commercial Bid without any deviation.\n6. This Bid, together with your written acceptance thereof and your notification of award, shall constitute a binding Contract between us.",
+          "similarity": 0.5095029799999999,
+          "chunkIndex": 171,
+          "chunkNumber": 172,
+          "originalFilename": "file-1754854468036-533938313-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60",
+          "totalScore": 14.084271659999999
         },
         "relevance": 0
       },
       {
-        "text": "bahi, Lutha Kala, Varanasi, Uttar Pradesh\n\nState\nUTTAR PRADESH\nZipCode\n221104\nNearest Railway Station to the place of permanent resident\nVaranasi Cantt\n\n# Education Details \n\nEducation Qualification\n\n...",
+        "text": "with the Time Schedule (Key Dates) for all the Live Tenders released by Bank of Baroda on the home page of bank's e-Tendering Portal on www.tenderwizard.com/BOB.\n1.6.2. Download of Tender Documents\n\nT...",
         "metadata": {
-          "id": "c64d5c8c-388d-449b-bee9-b620d9be0fad_chunk_2",
-          "text": "bahi, Lutha Kala, Varanasi, Uttar Pradesh\n\nState\nUTTAR PRADESH\nZipCode\n221104\nNearest Railway Station to the place of permanent resident\nVaranasi Cantt\n\n# Education Details \n\nEducation Qualification\n\n| Qualification(s) | Board / <br> University | Roll No. | Year | Name \\& Address of Institution Studied | Division | Subjects |\n| :--: | :--: | :--: | :--: | :--: | :--: | :--: |\n| HIGH SCHOOL | CBSE | 23278026 | 2023 | St. Joseph's School, Shaktinagar, Sonbhadra, Uttar Pradesh | B1 | Math, Science, Social Science, English, Hindi |\n| INTERMEDIATE | CBSE | 23776535 | 2025 | St. Joseph's School, Shaktinagar, Sonbhadra, Uttar Pradesh | B2 | Physics, Chemistry, Math, English, IP |\n| DIPLOMA ( 3 <br> YEARS ) |  |  |  |  |  |  |\n| B.SC. |  |  |  |  |  |  |\n| B.C.A. |  |  |  |  |  |  |\n| B.TECH. |  |  |  |  |  |  |\n| MCA |  |  |  |  |  |  |\n| M.TECH. |  |  |  |  |  |  |\n| M.SC. |  |  |  |  |  |  |\n| OTHER UG |  |  |  |  |  |  |\n| OTHER PG |  |  |  |  |  |  |",
-          "similarity": 0.45675639999999995,
-          "chunkIndex": 2,
-          "chunkNumber": 3,
-          "originalFilename": "file-1753427514510-61740358-erp-student-registration-form.pdf",
-          "documentId": "c64d5c8c-388d-449b-bee9-b620d9be0fad",
-          "totalScore": 1.35184267
+          "id": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60_chunk_99",
+          "text": "with the Time Schedule (Key Dates) for all the Live Tenders released by Bank of Baroda on the home page of bank's e-Tendering Portal on www.tenderwizard.com/BOB.\n1.6.2. Download of Tender Documents\n\nThe Pre-qualification / Main Bidding Documents are available for free downloading.\n1.6.3. Online Submission of Tender\n\nSubmission of bids will be preceded by Online Submission of Tender with digitally signed Bid Hashes (Seals) within the Tender Time Schedule (Key dates) published in the Detailed Notice Inviting Tender. The Bid Data is to be prepared in the templates provided by the Tendering Authority of BOB. The templates may be either form based, extensible tables and / or upload-able documents. In the formbased type of templates and extensible table type of templates, the bidders are required to enter the data and encrypt the data/documents using the Digital Certificate / Encryption Tool wherever applicable.",
+          "similarity": 0.50378048,
+          "chunkIndex": 99,
+          "chunkNumber": 100,
+          "originalFilename": "file-1754854468036-533938313-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60",
+          "totalScore": 14.084271659999999
         },
         "relevance": 0
       },
       {
-        "text": "# HBTU Kanpur \n\n## Student Registration Form\n\n## Academics Details\n\nEnrollment No\nEnrollment Pending\nBranch\nMathematics and Data Science\nCurrent Semester\nI\n\nStudent Name\nVEDANSH MISHRA\nDate of Birth\n1...",
+        "text": "al Bid documents of all Bidders and after scrutinizing these documents will shortlist the Bidders who are eligible for Commercial Bidding Process. The short-listed Bidders will be intimated by email.\n...",
         "metadata": {
-          "id": "c64d5c8c-388d-449b-bee9-b620d9be0fad_chunk_0",
-          "text": "# HBTU Kanpur \n\n## Student Registration Form\n\n## Academics Details\n\nEnrollment No\nEnrollment Pending\nBranch\nMathematics and Data Science\nCurrent Semester\nI\n\nStudent Name\nVEDANSH MISHRA\nDate of Birth\n10 Feb 2008\nContact No.\n7379885334\nPersonal Email\naltvedansh@gmail.com\nCategory\nGEN-EWS\nFee Waiver\nYes\nIdentification Mark\nMole on forehead\nHostel Required.?\nHostel\nNationality\nIndian\n\nProgramme\nBS-MS Mathematics and Data Science\nAdmission Source\nJEE MAINS\n\n## Personal Details\n\nStudent Name in Hindi\nवेदांशा मिश्रा\nGender\nMale\nAlternat Contact No.\n0\nHBTU Email\n\nSub Category\n\nBlood Group\nB+\nAdhaar Card No\n236453267323\nMode of Transport\nWalker\nReligion\nHindu\n\n## Entrance Examination Details\n\nEntrance Exam\nJEE MAINS\nRoll No / Application Number\n250310991301\nCategory Rank\n30002\n\nFather Name\nDurgeshwar Mishra\nMother Name\nShashi Bala Mishra\nParent's Mail ID\n\nYear\n2025\nAIR Rank\n206760\nSeat Allot in Category\nOPEN-EWS\n\n## Parents Details\n\nFather's Contact No.\n7379885334\nLandline No.\n\nAddress",
-          "similarity": 0.42592346999999997,
-          "chunkIndex": 0,
-          "chunkNumber": 1,
-          "originalFilename": "file-1753427514510-61740358-erp-student-registration-form.pdf",
-          "documentId": "c64d5c8c-388d-449b-bee9-b620d9be0fad",
-          "totalScore": 1.35184267
+          "id": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60_chunk_101",
+          "text": "al Bid documents of all Bidders and after scrutinizing these documents will shortlist the Bidders who are eligible for Commercial Bidding Process. The short-listed Bidders will be intimated by email.\n1.6.7. Opening of the Commercial Bids: The Bidders may remain present in the office of the Tender Opening Authority at the time of opening of\n\n\n\nCommercial Bids. However, the results of the Commercial Bids i.e. TCO of all bidders shall be made available on the bank's e-procurement portal after the completion of opening process.\n1.6.8. Tender Schedule (Key Dates) : The bidders are strictly advised to follow the Dates and Times as indicated in the Time Schedule in the detailed tender Notice for the Tender. All the online activities are time tracked and the electronic Tendering System enforces time-locks that ensure that no activity or transaction can take place outside the Start and End Dates and time of the stage as defined in the Tender Schedule.",
+          "similarity": 0.4893868,
+          "chunkIndex": 101,
+          "chunkNumber": 102,
+          "originalFilename": "file-1754854468036-533938313-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60",
+          "totalScore": 14.084271659999999
+        },
+        "relevance": 0
+      },
+      {
+        "text": "and demanded from or otherwise notified to us in writing before the expiry of the said date which will be enforceable against us notwithstanding that the same is or are enforced after the said date.\n4...",
+        "metadata": {
+          "id": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60_chunk_296",
+          "text": "and demanded from or otherwise notified to us in writing before the expiry of the said date which will be enforceable against us notwithstanding that the same is or are enforced after the said date.\n4. You will have the fullest liberty without our consent and without affecting our liabilities under this Bank Guarantee from time to time to vary any of the terms and conditions of the PO and RFP or extend the time of performance of the contract or to postpone for any time or from time to time any of your rights or powers against the Bidder and either to enforce or forbear to enforce any of the terms and conditions of the said PO and RFP and we shall not be released from our liability under Bank Guarantee by exercise of your liberty with reference to matters aforesaid or by reason of any time being given to the Bidder or any other forbearance, act or omission on your part or any indulgence by you to the Bidder or any other act,",
+          "similarity": 0.48848313,
+          "chunkIndex": 296,
+          "chunkNumber": 297,
+          "originalFilename": "file-1754854468036-533938313-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60",
+          "totalScore": 14.084271659999999
+        },
+        "relevance": 0
+      },
+      {
+        "text": "the electronic Tendering System enforces time-locks that ensure that no activity or transaction can take place outside the Start and End Dates and time of the stage as defined in the Tender Schedule.\n...",
+        "metadata": {
+          "id": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60_chunk_102",
+          "text": "the electronic Tendering System enforces time-locks that ensure that no activity or transaction can take place outside the Start and End Dates and time of the stage as defined in the Tender Schedule.\nAt the sole discretion of the tender Authority, the time schedule of the Tender stages may be extended.\n1.7. Important Points: The Bid hash values are digitally signed using valid Class - III Digital Certificate issued by any Certifying Authority. The bidders are required to obtain Digital Certificate well in advance.\na. The bidder may modify bids before the deadline for Online Submission of Tender as per Time Schedule mentioned in the Tender documents.\nb. This stage will be applicable during both Pre-bid / Pre-qualification and Financial Bidding Processes.",
+          "similarity": 0.48121309999999995,
+          "chunkIndex": 102,
+          "chunkNumber": 103,
+          "originalFilename": "file-1754854468036-533938313-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60",
+          "totalScore": 14.084271659999999
         },
         "relevance": 0
       }
     ],
     "confidence": 1,
     "model": "gpt-4o-mini",
-    "tokens": 3234
+    "tokens": 15502
   },
   {
-    "id": "q_1753394206478_phy9xjapy",
-    "timestamp": "2025-07-24T21:56:46.478Z",
-    "question": "tell me all the dates in that document",
-    "answer": "The document contains several important dates related to the bid process. Here are the dates mentioned:\n\n1. **RFP Issuance Date**: 30th April 2022\n2. **Pre-bid Meeting Date**: 10th May 2022 at 04:00 PM\n3. **Last Date of Submission of RFP Response (Closing Date)**: 27th May 2022 at 2:30 PM\n4. **Eligibility Cum Technical Bid Opening Date**: 27th May 2022 at 3:30 PM\n\nThese dates outline the timeline for the submission and opening of bids as detailed in Document 1.",
+    "id": "q_1754854526606_zg9l3enwe",
+    "timestamp": "2025-08-10T19:35:26.606Z",
+    "question": "give me all the dates in the table",
+    "answer": "The provided context does not contain specific dates listed in a table format. However, it does mention \"Key Dates\" in relation to the Tender processes, particularly in Document 2 and Document 3, which refer to the Time Schedule for Tender activities.\n\n1. **Document 2** highlights that there is a Time Schedule for all Live Tenders released by the Bank of Baroda, which includes deadlines for activities such as downloading tender documents and submitting bids.\n2. **Document 3** mentions that bidders must strictly adhere to the Dates and Times indicated in the Time Schedule.\n\nUnfortunately, the actual dates themselves are not specified in the text. If you need exact dates or a detailed schedule, that information may be found directly on the Bank of Baroda’s e-Tendering Portal or in the detailed tender documents, but it is not provided in the context shared.",
     "sources": [
       {
-        "text": "taken as the costs, for such alternatives and also for arriving at the Total Cost of Ownership for the purpose of evaluation of the Bidder. The same item has to be supplied by the Bidder free of cost\n...",
+        "text": "with the schedule of Prices indicated in the Price Bid and made part of this Tender.\n2. If our Bid is accepted, we undertake to comply with the delivery schedule as mentioned in the Tender Document.\n3...",
         "metadata": {
-          "chunkEnd": 82709,
-          "totalCharacters": 245514,
-          "ocrModel": "mistral-ocr-latest",
-          "lineCount": 2372,
-          "textLength": 245514,
-          "fileType": ".pdf",
-          "processedAt": "2025-07-24T21:54:59.028Z",
-          "structuredData": "{\"tables\":[\"|  # | Particulars | Timeline  |\",\"| --- | --- | --- |\",\"|  1 | RFP Issuance Date | 30th April, 2022  |\",\"|  2 | RFP Coordinator Name, Contact details (Bank) | 1. Mr. Sukhpal Singh, Sr. Manager (IT)\",\"4. Postal Address: The Chief Manager (IT Procurement), Bank of Baroda, C-34, G-Block, Baroda Sun Tower, 7th Floor, Project Office, BKC, Mumbai – 400051.  |\",\"|  3 | Pre-bid Meeting details | - Pre bid meeting will be held online through Bank's Online Meeting Platform (i.e. Microsoft Teams) on 10th May 2022 at 04:00 PM.\",\"- Bidder representatives will have to click the Bank provided link (provided in the e-mail) to join the On-Line Pre-bid meeting.  |\",\"|  4 | Last Date of Submission of RFP Response (Closing Date) | 2:30 PM on 27th May, 2022\",\"URL: https://www.tenderwizard.com/BOB  |\",\"|  5 | Eligibility Cum Technical Bid Opening Date | 3:30 PM on 27th May, 2022\",\"2. Bidders are requested to send bid submission confirmation with their email address for attending online bid open",
-          "chunkStart": 82110,
-          "detectedLanguages": "",
-          "filename": "file-1753394099014-871077741-rfp-document-digital-insurance-solution-30-07 (1).pdf",
-          "ocrProcessed": true,
-          "totalWords": 39530,
-          "chunkIndex": 132,
-          "wordCount": 39530,
-          "totalChunks": 391,
-          "totalPages": 110
+          "id": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60_chunk_171",
+          "text": "with the schedule of Prices indicated in the Price Bid and made part of this Tender.\n2. If our Bid is accepted, we undertake to comply with the delivery schedule as mentioned in the Tender Document.\n3. We agree to abide by this Tender Offer for 180 days from date of bid opening and our Offer shall remain binding on us and may be accepted by the Bank any time before expiry of the offer.\n4. All 'Bill of Material' line items have been quoted as per requirement in Commercial Bid format without any deviation.\n5. Masked Commercial Bid (Annexure 11) and Commercial Bid (Annexure 12) have been submitted without any deviation. Bill of Materials which have been marked in the masked Commercial Bid is as per the submitted Commercial Bid without any deviation.\n6. This Bid, together with your written acceptance thereof and your notification of award, shall constitute a binding Contract between us.",
+          "similarity": 0.5095029799999999,
+          "chunkIndex": 171,
+          "chunkNumber": 172,
+          "originalFilename": "file-1754854468036-533938313-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60",
+          "totalScore": 7.17906117
         },
-        "relevance": 0.3967919
+        "relevance": 0
+      },
+      {
+        "text": "with the Time Schedule (Key Dates) for all the Live Tenders released by Bank of Baroda on the home page of bank's e-Tendering Portal on www.tenderwizard.com/BOB.\n1.6.2. Download of Tender Documents\n\nT...",
+        "metadata": {
+          "id": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60_chunk_99",
+          "text": "with the Time Schedule (Key Dates) for all the Live Tenders released by Bank of Baroda on the home page of bank's e-Tendering Portal on www.tenderwizard.com/BOB.\n1.6.2. Download of Tender Documents\n\nThe Pre-qualification / Main Bidding Documents are available for free downloading.\n1.6.3. Online Submission of Tender\n\nSubmission of bids will be preceded by Online Submission of Tender with digitally signed Bid Hashes (Seals) within the Tender Time Schedule (Key dates) published in the Detailed Notice Inviting Tender. The Bid Data is to be prepared in the templates provided by the Tendering Authority of BOB. The templates may be either form based, extensible tables and / or upload-able documents. In the formbased type of templates and extensible table type of templates, the bidders are required to enter the data and encrypt the data/documents using the Digital Certificate / Encryption Tool wherever applicable.",
+          "similarity": 0.50378048,
+          "chunkIndex": 99,
+          "chunkNumber": 100,
+          "originalFilename": "file-1754854468036-533938313-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60",
+          "totalScore": 7.17906117
+        },
+        "relevance": 0
+      },
+      {
+        "text": "al Bid documents of all Bidders and after scrutinizing these documents will shortlist the Bidders who are eligible for Commercial Bidding Process. The short-listed Bidders will be intimated by email.\n...",
+        "metadata": {
+          "id": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60_chunk_101",
+          "text": "al Bid documents of all Bidders and after scrutinizing these documents will shortlist the Bidders who are eligible for Commercial Bidding Process. The short-listed Bidders will be intimated by email.\n1.6.7. Opening of the Commercial Bids: The Bidders may remain present in the office of the Tender Opening Authority at the time of opening of\n\n\n\nCommercial Bids. However, the results of the Commercial Bids i.e. TCO of all bidders shall be made available on the bank's e-procurement portal after the completion of opening process.\n1.6.8. Tender Schedule (Key Dates) : The bidders are strictly advised to follow the Dates and Times as indicated in the Time Schedule in the detailed tender Notice for the Tender. All the online activities are time tracked and the electronic Tendering System enforces time-locks that ensure that no activity or transaction can take place outside the Start and End Dates and time of the stage as defined in the Tender Schedule.",
+          "similarity": 0.4893868,
+          "chunkIndex": 101,
+          "chunkNumber": 102,
+          "originalFilename": "file-1754854468036-533938313-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60",
+          "totalScore": 7.17906117
+        },
+        "relevance": 0
+      },
+      {
+        "text": "and demanded from or otherwise notified to us in writing before the expiry of the said date which will be enforceable against us notwithstanding that the same is or are enforced after the said date.\n4...",
+        "metadata": {
+          "id": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60_chunk_296",
+          "text": "and demanded from or otherwise notified to us in writing before the expiry of the said date which will be enforceable against us notwithstanding that the same is or are enforced after the said date.\n4. You will have the fullest liberty without our consent and without affecting our liabilities under this Bank Guarantee from time to time to vary any of the terms and conditions of the PO and RFP or extend the time of performance of the contract or to postpone for any time or from time to time any of your rights or powers against the Bidder and either to enforce or forbear to enforce any of the terms and conditions of the said PO and RFP and we shall not be released from our liability under Bank Guarantee by exercise of your liberty with reference to matters aforesaid or by reason of any time being given to the Bidder or any other forbearance, act or omission on your part or any indulgence by you to the Bidder or any other act,",
+          "similarity": 0.48848313,
+          "chunkIndex": 296,
+          "chunkNumber": 297,
+          "originalFilename": "file-1754854468036-533938313-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60",
+          "totalScore": 7.17906117
+        },
+        "relevance": 0
+      },
+      {
+        "text": "the electronic Tendering System enforces time-locks that ensure that no activity or transaction can take place outside the Start and End Dates and time of the stage as defined in the Tender Schedule.\n...",
+        "metadata": {
+          "id": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60_chunk_102",
+          "text": "the electronic Tendering System enforces time-locks that ensure that no activity or transaction can take place outside the Start and End Dates and time of the stage as defined in the Tender Schedule.\nAt the sole discretion of the tender Authority, the time schedule of the Tender stages may be extended.\n1.7. Important Points: The Bid hash values are digitally signed using valid Class - III Digital Certificate issued by any Certifying Authority. The bidders are required to obtain Digital Certificate well in advance.\na. The bidder may modify bids before the deadline for Online Submission of Tender as per Time Schedule mentioned in the Tender documents.\nb. This stage will be applicable during both Pre-bid / Pre-qualification and Financial Bidding Processes.",
+          "similarity": 0.48121309999999995,
+          "chunkIndex": 102,
+          "chunkNumber": 103,
+          "originalFilename": "file-1754854468036-533938313-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "6455e952-b2f0-4f2b-96c2-ccd3c9285d60",
+          "totalScore": 7.17906117
+        },
+        "relevance": 0
       }
     ],
-    "confidence": 0.6032081,
+    "confidence": 1,
     "model": "gpt-4o-mini",
-    "tokens": 1196
+    "tokens": 8094
   },
   {
-    "id": "q_1753394178012_rzkjlfr9y",
-    "timestamp": "2025-07-24T21:56:18.012Z",
-    "question": "tell me all the email in that document",
-    "answer": "The context provided does not contain specific email addresses. However, it does mention a contact person from the respondent, which includes a placeholder for the email ID (\"e-Mail ID:\"). Unfortunately, there are no actual email addresses listed in the document. \n\nThis information is found in Document 1, specifically in the section related to the Pre-Bid Queries Form where respondents are requested to provide their contact details. \n\nIf you have any other questions or need further assistance, feel free to ask!",
+    "id": "q_1754852830030_s2hog7q8i",
+    "timestamp": "2025-08-10T19:07:10.030Z",
+    "question": "give me all the dates in the table",
+    "answer": "The context provided does not contain specific dates or a table with dates. However, it does mention the importance of adhering to a \"Time Schedule (Key Dates)\" for all live tenders released by Bank of Baroda, which indicates that there are specific dates related to submission and bidding processes. This information is found in Document 2, where it mentions the \"Time Schedule (Key Dates) for all the Live Tenders.\"\n\nFor detailed dates, you may need to refer to the tender documents directly available from Bank of Baroda's e-Tendering portal as mentioned in the documents, as they outline the specific timelines for tender submissions and other related activities. \n\nIf you need more precise dates, it would be best to access the mentioned portal or the specific tender documents directly.",
     "sources": [
       {
-        "text": "..........by ............................ 20\nYours faithfully,\n\nAuthorized Signatory\nName:\nDesignation:\nBidder's Corporate Name\nAddress\nEmail and Phone \\#\n\n# 2) \n\n## Annexure 06-Pre-Bid Queries Form\n\n...",
+        "text": "with the schedule of Prices indicated in the Price Bid and made part of this Tender.\n2. If our Bid is accepted, we undertake to comply with the delivery schedule as mentioned in the Tender Document.\n3...",
         "metadata": {
-          "structuredData": "{\"tables\":[\"|  # | Particulars | Timeline  |\",\"| --- | --- | --- |\",\"|  1 | RFP Issuance Date | 30th April, 2022  |\",\"|  2 | RFP Coordinator Name, Contact details (Bank) | 1. Mr. Sukhpal Singh, Sr. Manager (IT)\",\"4. Postal Address: The Chief Manager (IT Procurement), Bank of Baroda, C-34, G-Block, Baroda Sun Tower, 7th Floor, Project Office, BKC, Mumbai – 400051.  |\",\"|  3 | Pre-bid Meeting details | - Pre bid meeting will be held online through Bank's Online Meeting Platform (i.e. Microsoft Teams) on 10th May 2022 at 04:00 PM.\",\"- Bidder representatives will have to click the Bank provided link (provided in the e-mail) to join the On-Line Pre-bid meeting.  |\",\"|  4 | Last Date of Submission of RFP Response (Closing Date) | 2:30 PM on 27th May, 2022\",\"URL: https://www.tenderwizard.com/BOB  |\",\"|  5 | Eligibility Cum Technical Bid Opening Date | 3:30 PM on 27th May, 2022\",\"2. Bidders are requested to send bid submission confirmation with their email address for attending online bid open",
-          "totalChunks": 391,
-          "chunkStart": 109709,
-          "totalWords": 39530,
-          "processedAt": "2025-07-24T21:54:59.028Z",
-          "totalPages": 110,
-          "fileType": ".pdf",
-          "chunkIndex": 176,
-          "ocrProcessed": true,
-          "textLength": 245514,
-          "detectedLanguages": "",
-          "totalCharacters": 245514,
-          "chunkEnd": 110553,
-          "wordCount": 39530,
-          "ocrModel": "mistral-ocr-latest",
-          "lineCount": 2372,
-          "filename": "file-1753394099014-871077741-rfp-document-digital-insurance-solution-30-07 (1).pdf"
+          "id": "85a2914b-71fd-441e-b62d-b13d51e45bbf_chunk_171",
+          "text": "with the schedule of Prices indicated in the Price Bid and made part of this Tender.\n2. If our Bid is accepted, we undertake to comply with the delivery schedule as mentioned in the Tender Document.\n3. We agree to abide by this Tender Offer for 180 days from date of bid opening and our Offer shall remain binding on us and may be accepted by the Bank any time before expiry of the offer.\n4. All 'Bill of Material' line items have been quoted as per requirement in Commercial Bid format without any deviation.\n5. Masked Commercial Bid (Annexure 11) and Commercial Bid (Annexure 12) have been submitted without any deviation. Bill of Materials which have been marked in the masked Commercial Bid is as per the submitted Commercial Bid without any deviation.\n6. This Bid, together with your written acceptance thereof and your notification of award, shall constitute a binding Contract between us.",
+          "similarity": 0.50939888,
+          "chunkIndex": 171,
+          "chunkNumber": 172,
+          "originalFilename": "file-1754852729374-484827743-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "85a2914b-71fd-441e-b62d-b13d51e45bbf",
+          "totalScore": 7.263047029999999
         },
-        "relevance": 0.4172173
+        "relevance": 0
+      },
+      {
+        "text": "with the Time Schedule (Key Dates) for all the Live Tenders released by Bank of Baroda on the home page of bank's e-Tendering Portal on www.tenderwizard.com/BOB.\n1.6.2. Download of Tender Documents\n\nT...",
+        "metadata": {
+          "id": "85a2914b-71fd-441e-b62d-b13d51e45bbf_chunk_99",
+          "text": "with the Time Schedule (Key Dates) for all the Live Tenders released by Bank of Baroda on the home page of bank's e-Tendering Portal on www.tenderwizard.com/BOB.\n1.6.2. Download of Tender Documents\n\nThe Pre-qualification / Main Bidding Documents are available for free downloading.\n1.6.3. Online Submission of Tender\n\nSubmission of bids will be preceded by Online Submission of Tender with digitally signed Bid Hashes (Seals) within the Tender Time Schedule (Key dates) published in the Detailed Notice Inviting Tender. The Bid Data is to be prepared in the templates provided by the Tendering Authority of BOB. The templates may be either form based, extensible tables and / or upload-able documents. In the formbased type of templates and extensible table type of templates, the bidders are required to enter the data and encrypt the data/documents using the Digital Certificate / Encryption Tool wherever applicable.",
+          "similarity": 0.50360048,
+          "chunkIndex": 99,
+          "chunkNumber": 100,
+          "originalFilename": "file-1754852729374-484827743-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "85a2914b-71fd-441e-b62d-b13d51e45bbf",
+          "totalScore": 7.263047029999999
+        },
+        "relevance": 0
+      },
+      {
+        "text": "al Bid documents of all Bidders and after scrutinizing these documents will shortlist the Bidders who are eligible for Commercial Bidding Process. The short-listed Bidders will be intimated by email.\n...",
+        "metadata": {
+          "id": "85a2914b-71fd-441e-b62d-b13d51e45bbf_chunk_101",
+          "text": "al Bid documents of all Bidders and after scrutinizing these documents will shortlist the Bidders who are eligible for Commercial Bidding Process. The short-listed Bidders will be intimated by email.\n1.6.7. Opening of the Commercial Bids: The Bidders may remain present in the office of the Tender Opening Authority at the time of opening of\n\n\n\nCommercial Bids. However, the results of the Commercial Bids i.e. TCO of all bidders shall be made available on the bank's e-procurement portal after the completion of opening process.\n1.6.8. Tender Schedule (Key Dates) : The bidders are strictly advised to follow the Dates and Times as indicated in the Time Schedule in the detailed tender Notice for the Tender. All the online activities are time tracked and the electronic Tendering System enforces time-locks that ensure that no activity or transaction can take place outside the Start and End Dates and time of the stage as defined in the Tender Schedule.",
+          "similarity": 0.4893868,
+          "chunkIndex": 101,
+          "chunkNumber": 102,
+          "originalFilename": "file-1754852729374-484827743-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "85a2914b-71fd-441e-b62d-b13d51e45bbf",
+          "totalScore": 7.263047029999999
+        },
+        "relevance": 0
+      },
+      {
+        "text": "...........................................................................................................................................................................................................",
+        "metadata": {
+          "id": "85a2914b-71fd-441e-b62d-b13d51e45bbf_chunk_290",
+          "text": "........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................",
+          "similarity": 0.48894954,
+          "chunkIndex": 290,
+          "chunkNumber": 291,
+          "originalFilename": "file-1754852729374-484827743-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "85a2914b-71fd-441e-b62d-b13d51e45bbf",
+          "totalScore": 7.263047029999999
+        },
+        "relevance": 0
+      },
+      {
+        "text": "...........................................................................................................................................................................................................",
+        "metadata": {
+          "id": "85a2914b-71fd-441e-b62d-b13d51e45bbf_chunk_291",
+          "text": "........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................",
+          "similarity": 0.48894954,
+          "chunkIndex": 291,
+          "chunkNumber": 292,
+          "originalFilename": "file-1754852729374-484827743-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "85a2914b-71fd-441e-b62d-b13d51e45bbf",
+          "totalScore": 7.263047029999999
+        },
+        "relevance": 0
       }
     ],
-    "confidence": 0.5827827,
+    "confidence": 1,
     "model": "gpt-4o-mini",
-    "tokens": 1215
+    "tokens": 7144
   }
 ]

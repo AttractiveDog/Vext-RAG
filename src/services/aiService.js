@@ -43,45 +43,20 @@ class AIService {
       
       console.log(`📊 Context stats: ${context.length} documents -> ${truncatedContext.documents.length} documents (${truncatedContext.estimatedTokens} estimated tokens)`);
 
-      // Prepare context text with better formatting
-      const contextText = truncatedContext.documents.map((doc, index) => 
-        `=== Document ${index + 1} ===
-Content: ${doc.text}
-Metadata: ${JSON.stringify(doc.metadata || {}, null, 2)}
----`
-      ).join('\n\n');
+      // Check if question is about tables, charts, or structured data
+      const isStructuredDataQuestion = this.isStructuredDataQuestion(question);
+      
+      // Prepare context text with enhanced formatting for structured data
+      const contextText = this.formatContextForAI(truncatedContext.documents, isStructuredDataQuestion);
 
-      // Create the prompt with token-aware sizing
-      const systemPrompt = `You are a helpful AI assistant that answers questions based on the provided context. 
+      // Create specialized prompt for structured data questions
+      const systemPrompt = isStructuredDataQuestion ? 
+        this.getStructuredDataSystemPrompt(contextText) :
+        this.getStandardSystemPrompt(contextText);
 
-IMPORTANT INSTRUCTIONS:
-- You MUST use information from the provided context to answer questions
-- If the context contains relevant information, even if it's not a perfect match, use it to provide a helpful answer
-- Look for related terms, synonyms, or broader categories that might answer the question
-- If the context has pricing information, costs, or financial data, use it even if the exact product name doesn't match
-- If the context has feature descriptions, capabilities, or product information, use it to answer related questions
-- Only say "the context doesn't contain information" if you've thoroughly searched and found absolutely nothing relevant
-- Always cite which document(s) you're using for your answer
-- If someone asks about "executive AI" but you find "AI-powered meeting assistant" or "meeting bot" pricing, use that information and explain the connection
-- If someone asks about pricing but you find cost information for similar services, use that as a reference point
-- When you find pricing information, always mention the specific product/service name from the context and explain how it relates to the question
-
-Guidelines:
-- Provide accurate and relevant answers based on the context
-- Be concise but comprehensive
-- If you're unsure about something, acknowledge the uncertainty but still provide what you can from the context
-- Look for indirect answers - if someone asks about "executive AI" but the context has "AI-powered meeting assistant" or similar, use that information
-
-Context:
-${contextText}
-
-Please answer the following question based on the context provided. If you find relevant information, use it and cite the document number:`;
-
-      const userPrompt = `Question: ${question}
-
-Please provide a detailed answer using the information from the provided context. If you find relevant information, even if it's not an exact match, use it and cite the specific document number(s).
-
-For pricing questions: If the exact product name isn't found but you see pricing for similar services (like "meeting bot" when asked about "executive AI"), use that information and explain the connection.`;
+      const userPrompt = isStructuredDataQuestion ?
+        this.getStructuredDataUserPrompt(question) :
+        this.getStandardUserPrompt(question);
 
       // Generate response using OpenAI with retry logic for rate limits
       const openai = this._initOpenAI();
@@ -122,7 +97,8 @@ For pricing questions: If the exact product name isn't found but you see pricing
         tokens: response.usage?.total_tokens || 0,
         contextTruncated: truncatedContext.wasTruncated,
         documentsUsed: truncatedContext.documents.length,
-        totalDocumentsAvailable: context.length
+        totalDocumentsAvailable: context.length,
+        isStructuredDataQuestion
       };
     } catch (error) {
       console.error('Error generating answer:', error);
@@ -286,6 +262,189 @@ Answer:`;
       estimatedTokens: currentTokens,
       availableTokens: availableTokensForContext
     };
+  }
+
+  /**
+   * Check if the question is about structured data (tables, charts, etc.)
+   * @param {string} question - User's question
+   * @returns {boolean} - True if question is about structured data
+   */
+  isStructuredDataQuestion(question) {
+    const structuredKeywords = [
+      'table', 'tables', 'chart', 'charts', 'graph', 'graphs', 'figure', 'figures',
+      'data', 'dataset', 'spreadsheet', 'matrix', 'grid', 'column', 'columns',
+      'row', 'rows', 'cell', 'cells', 'value', 'values', 'statistics', 'stats',
+      'percentage', 'percentages', 'total', 'totals', 'sum', 'average', 'mean',
+      'compare', 'comparison', 'trend', 'trends', 'pattern', 'patterns'
+    ];
+    
+    const lowerQuestion = question.toLowerCase();
+    return structuredKeywords.some(keyword => lowerQuestion.includes(keyword));
+  }
+
+  /**
+   * Format context specifically for structured data questions
+   * @param {Array<{text: string, metadata: Object}>} documents - Documents to format
+   * @param {boolean} isStructuredDataQuestion - Whether this is a structured data question
+   * @returns {string} - Formatted context text
+   */
+  formatContextForAI(documents, isStructuredDataQuestion) {
+    if (isStructuredDataQuestion) {
+      return documents.map((doc, index) => {
+        let formattedText = `=== Document ${index + 1} ===\n`;
+        
+        // Include structured data if available
+        if (doc.metadata && doc.metadata.tables && doc.metadata.tables.length > 0) {
+          formattedText += `📊 TABLES FOUND (${doc.metadata.tables.length}):\n`;
+          doc.metadata.tables.forEach((table, tableIndex) => {
+            formattedText += `Table ${tableIndex + 1}:\n${table.content || table.rows?.join('\n') || JSON.stringify(table)}\n\n`;
+          });
+        }
+        
+        if (doc.metadata && doc.metadata.charts && doc.metadata.charts.length > 0) {
+          formattedText += `📈 CHARTS FOUND (${doc.metadata.charts.length}):\n`;
+          doc.metadata.charts.forEach((chart, chartIndex) => {
+            formattedText += `Chart ${chartIndex + 1} (${chart.type}): ${chart.title}\n`;
+            if (chart.data && chart.data.length > 0) {
+              formattedText += `Data: ${chart.data.join(', ')}\n`;
+            }
+            formattedText += '\n';
+          });
+        }
+        
+        // Include the main text content
+        formattedText += `Content: ${doc.text}\n`;
+        
+        // Include other structured data
+        if (doc.metadata) {
+          const structuredData = [];
+          if (doc.metadata.numbers && doc.metadata.numbers.length > 0) {
+            structuredData.push(`Numbers: ${doc.metadata.numbers.join(', ')}`);
+          }
+          if (doc.metadata.dates && doc.metadata.dates.length > 0) {
+            structuredData.push(`Dates: ${doc.metadata.dates.join(', ')}`);
+          }
+          if (doc.metadata.lists && doc.metadata.lists.length > 0) {
+            structuredData.push(`Lists: ${doc.metadata.lists.slice(0, 3).join('; ')}`);
+          }
+          
+          if (structuredData.length > 0) {
+            formattedText += `Additional Data: ${structuredData.join(' | ')}\n`;
+          }
+        }
+        
+        formattedText += `Metadata: ${JSON.stringify(doc.metadata || {}, null, 2)}\n---\n\n`;
+        return formattedText;
+      }).join('\n');
+    } else {
+      // Standard formatting for non-structured data questions
+      return documents.map((doc, index) => 
+        `=== Document ${index + 1} ===
+Content: ${doc.text}
+Metadata: ${JSON.stringify(doc.metadata || {}, null, 2)}
+---`
+      ).join('\n\n');
+    }
+  }
+
+  /**
+   * Get system prompt for structured data questions
+   * @param {string} contextText - Formatted context text
+   * @returns {string} - System prompt
+   */
+  getStructuredDataSystemPrompt(contextText) {
+    return `You are a specialized AI assistant that excels at analyzing structured data like tables, charts, and numerical information.
+
+IMPORTANT INSTRUCTIONS FOR STRUCTURED DATA:
+- Pay special attention to tables, charts, and numerical data in the context
+- When analyzing tables, identify headers, rows, columns, and data relationships
+- For charts and graphs, extract trends, patterns, and key data points
+- Look for numerical patterns, percentages, totals, and comparisons
+- Identify relationships between different data points
+- When asked about specific values, search through all structured data carefully
+- If you find relevant data in tables or charts, cite the specific table/chart number
+- For numerical questions, provide exact values when available
+- Compare data across different tables or charts when relevant
+- Look for trends, patterns, and anomalies in the data
+
+STRUCTURED DATA ANALYSIS GUIDELINES:
+- Tables: Identify headers, data types, and relationships between columns
+- Charts: Determine chart type, extract data points, identify trends
+- Numbers: Look for totals, percentages, averages, and comparisons
+- Patterns: Identify trends, correlations, and anomalies
+- Context: Consider the broader context when interpreting data
+
+Context:
+${contextText}
+
+Please analyze the structured data and answer the following question. If you find relevant information in tables, charts, or other structured formats, cite the specific source and explain your reasoning.`;
+  }
+
+  /**
+   * Get standard system prompt for regular questions
+   * @param {string} contextText - Formatted context text
+   * @returns {string} - System prompt
+   */
+  getStandardSystemPrompt(contextText) {
+    return `You are a helpful AI assistant that answers questions based on the provided context. 
+
+IMPORTANT INSTRUCTIONS:
+- You MUST use information from the provided context to answer questions
+- If the context contains relevant information, even if it's not a perfect match, use it to provide a helpful answer
+- Look for related terms, synonyms, or broader categories that might answer the question
+- If the context has pricing information, costs, or financial data, use it even if the exact product name doesn't match
+- If the context has feature descriptions, capabilities, or product information, use it to answer related questions
+- Only say "the context doesn't contain information" if you've thoroughly searched and found absolutely nothing relevant
+- Always cite which document(s) you're using for your answer
+- If someone asks about "executive AI" but you find "AI-powered meeting assistant" or "meeting bot" pricing, use that information and explain the connection
+- If someone asks about pricing but you find cost information for similar services, use that as a reference point
+- When you find pricing information, always mention the specific product/service name from the context and explain how it relates to the question
+
+Guidelines:
+- Provide accurate and relevant answers based on the context
+- Be concise but comprehensive
+- If you're unsure about something, acknowledge the uncertainty but still provide what you can from the context
+- Look for indirect answers - if someone asks about "executive AI" but the context has "AI-powered meeting assistant" or similar, use that information
+
+Context:
+${contextText}
+
+Please answer the following question based on the context provided. If you find relevant information, use it and cite the document number:`;
+  }
+
+  /**
+   * Get user prompt for structured data questions
+   * @param {string} question - User's question
+   * @returns {string} - User prompt
+   */
+  getStructuredDataUserPrompt(question) {
+    return `Question: ${question}
+
+Please analyze the structured data (tables, charts, numbers) in the provided context and answer this question. 
+
+IMPORTANT:
+- Look specifically at tables, charts, and numerical data
+- Provide exact values when available in the data
+- Cite specific table or chart numbers when referencing data
+- Identify patterns, trends, and relationships in the data
+- If the question asks for specific numbers, search through all tables and charts carefully
+- Compare data across different sources when relevant
+- Explain your reasoning and how you arrived at your answer
+
+Please provide a detailed analysis using the structured data from the provided context.`;
+  }
+
+  /**
+   * Get standard user prompt for regular questions
+   * @param {string} question - User's question
+   * @returns {string} - User prompt
+   */
+  getStandardUserPrompt(question) {
+    return `Question: ${question}
+
+Please provide a detailed answer using the information from the provided context. If you find relevant information, even if it's not an exact match, use it and cite the specific document number(s).
+
+For pricing questions: If the exact product name isn't found but you see pricing for similar services (like "meeting bot" when asked about "executive AI"), use that information and explain the connection.`;
   }
 
   /**

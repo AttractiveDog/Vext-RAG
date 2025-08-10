@@ -270,8 +270,50 @@ router.post('/query', async (req, res) => {
 
     console.log(`Processing query: "${question}" for user: ${userId}`);
 
+    // Check if this is a structured data question
+    const isStructuredDataQuestion = isStructuredDataQuestion(question);
+    
     // Search for relevant documents with query expansion (filtered by user)
     let searchResults = await vectorService.searchDocuments(question, topK, { userId });
+    
+    // Enhanced search for structured data questions
+    if (isStructuredDataQuestion) {
+      console.log('🔍 Detected structured data question - using enhanced search strategy');
+      
+      // Add structured data keywords to improve search
+      const structuredKeywords = getStructuredDataKeywords(question);
+      const enhancedQuery = `${question} ${structuredKeywords.join(' ')}`;
+      
+      const enhancedResults = await vectorService.searchDocuments(enhancedQuery, topK, { userId });
+      
+      // Also search for documents with tables/charts in metadata
+      const tableChartResults = await searchForStructuredData(userId, topK);
+      
+      // Merge all results, prioritizing structured data
+      const allResults = [...searchResults];
+      
+      // Add enhanced results
+      enhancedResults.forEach(enhancedDoc => {
+        if (!allResults.find(doc => doc.documentId === enhancedDoc.documentId)) {
+          allResults.push(enhancedDoc);
+        }
+      });
+      
+      // Add table/chart results with higher priority
+      tableChartResults.forEach(structuredDoc => {
+        const existingIndex = allResults.findIndex(doc => doc.documentId === structuredDoc.documentId);
+        if (existingIndex === -1) {
+          allResults.unshift(structuredDoc); // Add to beginning for higher priority
+        } else {
+          // Boost existing result's score
+          allResults[existingIndex].totalScore *= 1.5;
+        }
+      });
+      
+      // Sort by relevance and take top K
+      allResults.sort((a, b) => b.totalScore - a.totalScore);
+      searchResults = allResults.slice(0, topK);
+    }
     
     // If we don't get enough results or the question is about pricing, try expanded search
     if (searchResults.length < 3 || question.toLowerCase().includes('pricing') || question.toLowerCase().includes('cost')) {
@@ -1163,5 +1205,103 @@ router.get('/ocr/formats', async (req, res) => {
     });
   }
 });
+
+// Helper methods for structured data processing
+
+/**
+ * Check if the question is about structured data (tables, charts, etc.)
+ * @param {string} question - User's question
+ * @returns {boolean} - True if question is about structured data
+ */
+function isStructuredDataQuestion(question) {
+  const structuredKeywords = [
+    'table', 'tables', 'chart', 'charts', 'graph', 'graphs', 'figure', 'figures',
+    'data', 'dataset', 'spreadsheet', 'matrix', 'grid', 'column', 'columns',
+    'row', 'rows', 'cell', 'cells', 'value', 'values', 'statistics', 'stats',
+    'percentage', 'percentages', 'total', 'totals', 'sum', 'average', 'mean',
+    'compare', 'comparison', 'trend', 'trends', 'pattern', 'patterns'
+  ];
+  
+  const lowerQuestion = question.toLowerCase();
+  return structuredKeywords.some(keyword => lowerQuestion.includes(keyword));
+}
+
+/**
+ * Get structured data keywords to enhance search
+ * @param {string} question - User's question
+ * @returns {Array<string>} - Array of keywords
+ */
+function getStructuredDataKeywords(question) {
+  const keywords = [];
+  const lowerQuestion = question.toLowerCase();
+  
+  // Add relevant keywords based on question content
+  if (lowerQuestion.includes('table') || lowerQuestion.includes('data')) {
+    keywords.push('table', 'data', 'information', 'details');
+  }
+  
+  if (lowerQuestion.includes('chart') || lowerQuestion.includes('graph')) {
+    keywords.push('chart', 'graph', 'visualization', 'figure');
+  }
+  
+  if (lowerQuestion.includes('number') || lowerQuestion.includes('value')) {
+    keywords.push('number', 'value', 'amount', 'quantity', 'total');
+  }
+  
+  if (lowerQuestion.includes('percentage') || lowerQuestion.includes('percent')) {
+    keywords.push('percentage', 'percent', 'rate', 'ratio');
+  }
+  
+  if (lowerQuestion.includes('compare') || lowerQuestion.includes('comparison')) {
+    keywords.push('compare', 'comparison', 'versus', 'vs', 'difference');
+  }
+  
+  return keywords;
+}
+
+/**
+ * Search for documents that contain structured data (tables, charts)
+ * @param {string} userId - User ID
+ * @param {number} topK - Number of results to return
+ * @returns {Promise<Array>} - Search results
+ */
+async function searchForStructuredData(userId, topK) {
+  try {
+    // Get all documents for the user
+    const allDocuments = await vectorService.getAllDocuments(userId);
+    
+    // Filter documents that have structured data in metadata
+    const structuredDocuments = allDocuments.filter(doc => {
+      const metadata = doc.metadata || {};
+      return (
+        (metadata.tables && metadata.tables.length > 0) ||
+        (metadata.charts && metadata.charts.length > 0) ||
+        (metadata.numbers && metadata.numbers.length > 0) ||
+        (metadata.structuredData && (
+          metadata.structuredData.tables?.length > 0 ||
+          metadata.structuredData.charts?.length > 0
+        ))
+      );
+    });
+    
+    // Convert to search result format
+    const results = structuredDocuments.map(doc => ({
+      documentId: doc.id,
+      originalFilename: doc.metadata?.filename || 'Unknown',
+      totalScore: 0.8, // High score for structured data
+      chunkCount: 1,
+      chunks: [{
+        text: doc.text,
+        metadata: doc.metadata,
+        distance: 0.2
+      }]
+    }));
+    
+    return results.slice(0, topK);
+  } catch (error) {
+    console.error('Error searching for structured data:', error);
+    return [];
+  }
+}
 
 export default router; 

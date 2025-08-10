@@ -477,7 +477,9 @@ class OCRService {
       dates: [],
       numbers: [],
       emails: [],
-      phoneNumbers: []
+      phoneNumbers: [],
+      charts: [],
+      graphics: []
     };
 
     // Split text into lines for processing
@@ -494,11 +496,22 @@ class OCRService {
       }
     });
 
-    // Extract tables (lines with |)
-    const tableLines = lines.filter(line => line.includes('|') && line.trim().length > 0);
-    if (tableLines.length > 0) {
-      structuredData.tables = tableLines;
-    }
+    // Enhanced table extraction - look for various table formats
+    const tableBlocks = this.extractTableBlocks(lines);
+    structuredData.tables = tableBlocks;
+
+    // Extract charts and graphics (look for chart-related keywords)
+    const chartKeywords = ['chart', 'graph', 'figure', 'diagram', 'plot', 'visualization'];
+    lines.forEach((line, index) => {
+      const lowerLine = line.toLowerCase();
+      if (chartKeywords.some(keyword => lowerLine.includes(keyword))) {
+        // Look for chart data in surrounding lines
+        const chartData = this.extractChartData(lines, index);
+        if (chartData) {
+          structuredData.charts.push(chartData);
+        }
+      }
+    });
 
     // Extract lists (lines starting with - or * or numbers)
     lines.forEach(line => {
@@ -564,6 +577,170 @@ class OCRService {
     }
 
     return structuredData;
+  }
+
+  /**
+   * Extract table blocks from text lines
+   * @param {Array<string>} lines - Text lines
+   * @returns {Array<Object>} - Array of table objects
+   */
+  extractTableBlocks(lines) {
+    const tables = [];
+    let currentTable = null;
+    let inTable = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmedLine = line.trim();
+
+      // Check if this line looks like a table row
+      const isTableRow = this.isTableRow(line);
+      
+      if (isTableRow && !inTable) {
+        // Start of a new table
+        inTable = true;
+        currentTable = {
+          startLine: i,
+          rows: [],
+          headers: [],
+          data: [],
+          type: 'markdown'
+        };
+      } else if (isTableRow && inTable) {
+        // Continue existing table
+        currentTable.rows.push(line);
+        
+        // Parse row data
+        const rowData = this.parseTableRow(line);
+        if (currentTable.headers.length === 0) {
+          currentTable.headers = rowData;
+        } else {
+          currentTable.data.push(rowData);
+        }
+      } else if (!isTableRow && inTable) {
+        // End of table
+        inTable = false;
+        if (currentTable && currentTable.rows.length > 0) {
+          currentTable.endLine = i - 1;
+          currentTable.content = currentTable.rows.join('\n');
+          tables.push(currentTable);
+        }
+        currentTable = null;
+      }
+    }
+
+    // Handle table that ends at the end of the document
+    if (inTable && currentTable && currentTable.rows.length > 0) {
+      currentTable.endLine = lines.length - 1;
+      currentTable.content = currentTable.rows.join('\n');
+      tables.push(currentTable);
+    }
+
+    return tables;
+  }
+
+  /**
+   * Check if a line looks like a table row
+   * @param {string} line - Line to check
+   * @returns {boolean} - True if line appears to be a table row
+   */
+  isTableRow(line) {
+    const trimmedLine = line.trim();
+    
+    // Check for markdown table format (| separated)
+    if (trimmedLine.includes('|') && trimmedLine.split('|').length > 2) {
+      return true;
+    }
+    
+    // Check for space-separated columns (common in OCR output)
+    const words = trimmedLine.split(/\s+/);
+    if (words.length >= 3) {
+      // Check if it looks like tabular data (numbers, dates, etc.)
+      const hasNumbers = words.some(word => /\d/.test(word));
+      const hasConsistentSpacing = this.hasConsistentColumnSpacing(trimmedLine);
+      if (hasNumbers && hasConsistentSpacing) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * Check if line has consistent column spacing (indicating table structure)
+   * @param {string} line - Line to check
+   * @returns {boolean} - True if line has consistent spacing
+   */
+  hasConsistentColumnSpacing(line) {
+    // Look for patterns of spaces that suggest column alignment
+    const spaceGroups = line.match(/\s{2,}/g);
+    if (spaceGroups && spaceGroups.length >= 2) {
+      // Check if spacing is relatively consistent
+      const lengths = spaceGroups.map(group => group.length);
+      const avgLength = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+      const variance = lengths.reduce((sum, len) => sum + Math.pow(len - avgLength, 2), 0) / lengths.length;
+      return variance < 5; // Low variance indicates consistent spacing
+    }
+    return false;
+  }
+
+  /**
+   * Parse a table row into columns
+   * @param {string} row - Table row
+   * @returns {Array<string>} - Array of column values
+   */
+  parseTableRow(row) {
+    // Handle markdown table format
+    if (row.includes('|')) {
+      return row.split('|')
+        .map(cell => cell.trim())
+        .filter(cell => cell.length > 0);
+    }
+    
+    // Handle space-separated format
+    // Split on multiple spaces to separate columns
+    return row.split(/\s{2,}/)
+      .map(cell => cell.trim())
+      .filter(cell => cell.length > 0);
+  }
+
+  /**
+   * Extract chart data from surrounding lines
+   * @param {Array<string>} lines - All text lines
+   * @param {number} chartLineIndex - Index of line containing chart keyword
+   * @returns {Object|null} - Chart data object or null
+   */
+  extractChartData(lines, chartLineIndex) {
+    const chartData = {
+      title: lines[chartLineIndex],
+      data: [],
+      type: 'unknown'
+    };
+
+    // Look for data in surrounding lines
+    const start = Math.max(0, chartLineIndex - 5);
+    const end = Math.min(lines.length, chartLineIndex + 10);
+    
+    for (let i = start; i < end; i++) {
+      const line = lines[i].trim();
+      
+      // Look for data patterns
+      if (line.match(/^\d+[.,]\d+/) || line.match(/^\d+\s+\d+/)) {
+        chartData.data.push(line);
+      }
+      
+      // Try to identify chart type
+      const lowerLine = line.toLowerCase();
+      if (lowerLine.includes('bar') || lowerLine.includes('column')) {
+        chartData.type = 'bar';
+      } else if (lowerLine.includes('line') || lowerLine.includes('trend')) {
+        chartData.type = 'line';
+      } else if (lowerLine.includes('pie') || lowerLine.includes('circle')) {
+        chartData.type = 'pie';
+      }
+    }
+
+    return chartData.data.length > 0 ? chartData : null;
   }
 
   /**
