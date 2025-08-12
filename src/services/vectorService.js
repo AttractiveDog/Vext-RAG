@@ -14,19 +14,42 @@ class VectorService {
   /**
    * Initialize the vector database and collection
    */
-  async initialize() {
+  /**
+ * Initialize the vector database and collection
+ */
+async initialize() {
+  try {
+    console.log('Initializing vector database...');
+    
+    // First, check if collection already exists
     try {
-      console.log('Initializing vector database...');
+      const collections = await this.client.listCollections();
+      const existingCollection = collections.find(col => col.name === this.collectionName);
       
-      // Try to get existing collection first
-      try {
+      if (existingCollection) {
+        // Collection exists, get it
         this.collection = await this.client.getCollection({
           name: this.collectionName
         });
         console.log(`✅ Connected to existing collection: ${this.collectionName}`);
-      } catch (getError) {
-        // Collection doesn't exist, create it
-        console.log(`Creating new collection: ${this.collectionName}`);
+        return true;
+      }
+    } catch (listError) {
+      console.log('Could not list collections, will attempt to get/create collection directly');
+    }
+    
+    // Try to get existing collection first
+    try {
+      this.collection = await this.client.getCollection({
+        name: this.collectionName
+      });
+      console.log(`✅ Connected to existing collection: ${this.collectionName}`);
+      return true;
+    } catch (getError) {
+      // Collection doesn't exist, try to create it
+      console.log(`Collection doesn't exist, creating new collection: ${this.collectionName}`);
+      
+      try {
         this.collection = await this.client.createCollection({
           name: this.collectionName,
           metadata: {
@@ -35,26 +58,41 @@ class VectorService {
           }
         });
         console.log(`✅ Vector database initialized with new collection: ${this.collectionName}`);
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error initializing vector database:', error);
-      
-      // If there's a schema conflict, try to reset the collection
-      if (error.message.includes('schema') || error.message.includes('422') || error.message.includes('Unprocessable')) {
-        console.log('🔄 Attempting to reset collection due to schema conflict...');
-        try {
-          await this.resetCollection();
-          return true;
-        } catch (resetError) {
-          console.error('Failed to reset collection:', resetError);
+        return true;
+      } catch (createError) {
+        // If creation fails due to existing collection (race condition)
+        if (createError.message.includes('already exists') || createError.message.includes('UniqueError')) {
+          console.log(`Collection was created by another process, connecting to it...`);
+          try {
+            this.collection = await this.client.getCollection({
+              name: this.collectionName
+            });
+            console.log(`✅ Connected to collection after race condition: ${this.collectionName}`);
+            return true;
+          } catch (finalError) {
+            throw new Error(`Failed to connect to collection after race condition: ${finalError.message}`);
+          }
         }
+        throw createError;
       }
-      
-      throw new Error(`Failed to initialize vector database: ${error.message}`);
     }
+  } catch (error) {
+    console.error('Error initializing vector database:', error);
+    
+    // If there's a schema conflict, try to reset the collection
+    if (error.message.includes('schema') || error.message.includes('422') || error.message.includes('Unprocessable')) {
+      console.log('🔄 Attempting to reset collection due to schema conflict...');
+      try {
+        await this.resetCollection();
+        return true;
+      } catch (resetError) {
+        console.error('Failed to reset collection:', resetError);
+      }
+    }
+    
+    throw new Error(`Failed to initialize vector database: ${error.message}`);
   }
+}
 
   /**
    * Reset the collection (delete and recreate)
