@@ -534,7 +534,7 @@ class EmailVectorService {
       
       // Count email collections (user-specific collections)
       const emailCollections = collections.filter(col => 
-        col.name.startsWith(this.baseCollectionName)
+        col && col.name && col.name.startsWith(this.baseCollectionName)
       );
       
       return {
