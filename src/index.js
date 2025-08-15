@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import multer from 'multer';
 import apiRoutes from './routes/api.js';
+import emailRoutes from './routes/emailRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -66,6 +67,7 @@ app.locals.upload = upload;
 
 // API Routes
 app.use('/api', apiRoutes);
+app.use('/api/emails', emailRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -85,9 +87,26 @@ app.get('/', (req, res) => {
       health: '/health',
       ingest: '/api/ingest',
       query: '/api/query',
-      documents: '/api/documents'
+      documents: '/api/documents',
+      emails: {
+        ingest: '/api/emails/ingest',
+        query: '/api/emails/query',
+        list: '/api/emails/list',
+        stats: '/api/emails/stats',
+        search: '/api/emails/search',
+        health: '/api/emails/health'
+      }
+    },
+    testInterfaces: {
+      mainInterface: '/index.html',
+      emailTestInterface: '/email-test.html'
     }
   });
+});
+
+// Email test interface route
+app.get('/email-test', (req, res) => {
+  res.redirect('/email-test.html');
 });
 
 // Error handling middleware

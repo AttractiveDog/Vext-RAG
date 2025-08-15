@@ -1,0 +1,229 @@
+{
+  "emails": [
+    {
+      "email_id": "email_001",
+      "sender_email": "john.smith@techcorp.com",
+      "receiver_emails": ["board@techcorp.com", "investors@techcorp.com"],
+      "cc_emails": ["cfo@techcorp.com", "coo@techcorp.com"],
+      "bcc_emails": [],
+      "time_received": "2024-01-15T09:30:00Z",
+      "subject": "Q4 2023 Financial Results - Record Performance",
+      "body": "Dear Board Members, I'm pleased to report our Q4 2023 financial results. Revenue reached $45.2 million, representing a 28% increase from Q3's $35.3 million. Net profit was $8.7 million with a profit margin of 19.2%. Our customer base grew to 12,847 active users, up from 9,156 in Q3. Operating expenses were $36.5 million, well within our budgeted $38 million. Cash flow from operations was $11.3 million. We ended the quarter with $127.8 million in total assets and $89.2 million in shareholder equity. Employee count increased to 342 people across 5 offices. Our main product sales contributed $38.1 million (84.3% of total revenue), while services generated $7.1 million. Marketing spend was $4.2 million with a customer acquisition cost of $114 per customer. Average deal size increased to $3,520, up 15% from last quarter.",
+      "attachments": [
+        {
+          "name": "Q4_2023_Financial_Report.pdf",
+          "type": "application/pdf",
+          "size": "2.8MB"
+        },
+        {
+          "name": "Revenue_Breakdown_Chart.xlsx",
+          "type": "application/vnd.openxmlformats-officedocument.spreadsheetml.document",
+          "size": "1.2MB"
+        }
+      ]
+    },
+    {
+      "email_id": "email_002",
+      "sender_email": "maria.garcia@globalsupplier.com",
+      "receiver_emails": ["procurement@techcorp.com"],
+      "cc_emails": ["finance@techcorp.com"],
+      "bcc_emails": [],
+      "time_received": "2024-01-16T14:45:00Z",
+      "subject": "Invoice #INV-2024-0087 - Hardware Purchase Order",
+      "body": "Dear Procurement Team, Please find attached Invoice #INV-2024-0087 for the hardware order placed on January 10th. The invoice total is $156,750.00 for 125 server units at $1,254 each. Additional items include: 50 network switches at $890 each ($44,500), 200 ethernet cables at $25 each ($5,000), and 75 power supplies at $145 each ($10,875). Shipping costs were $2,375. Payment terms are Net 30 days from invoice date. The equipment has been shipped via FedEx tracking #8876543210987 and should arrive by January 20th. Please remit payment to our account within 30 days. For orders over $150,000, we offer a 2% early payment discount if paid within 10 days. Your account balance before this invoice was $23,450.",
+      "attachments": [
+        {
+          "name": "Invoice_INV-2024-0087.pdf",
+          "type": "application/pdf",
+          "size": "890KB"
+        },
+        {
+          "name": "Packing_List.pdf",
+          "type": "application/pdf",
+          "size": "245KB"
+        }
+      ]
+    },
+    {
+      "email_id": "email_003",
+      "sender_email": "hr@techcorp.com",
+      "receiver_emails": ["all@techcorp.com"],
+      "cc_emails": [],
+      "bcc_emails": ["leadership@techcorp.com"],
+      "time_received": "2024-01-17T08:15:00Z",
+      "subject": "2024 Benefits Enrollment & Salary Adjustments",
+      "body": "Dear Team, We're pleased to announce the 2024 benefits enrollment period and salary adjustments. Effective March 1st, 2024: Base salary increases average 6.5% across all roles. Software engineers (levels 1-3) will see increases ranging from $8,500 to $15,200 annually. Senior engineers (levels 4-5) receive increases of $12,300 to $18,700. Management roles see increases of $19,500 to $27,800. Health insurance premiums remain stable: $425/month for individual coverage, $890/month for family plans. The company contributes 85% of premiums. Dental coverage is $35/month individual, $78/month family. Our 401(k) match increases to 6% (up from 4%). Life insurance coverage is 2x annual salary up to $500,000. We're adding a $2,500 annual professional development budget per employee. Parking costs remain $120/month downtown, $85/month suburban locations. Gym membership reimbursement increases to $75/month. New this year: mental health stipend of $150/month and childcare assistance up to $2,000/month.",
+      "attachments": [
+        {
+          "name": "2024_Benefits_Guide.pdf",
+          "type": "application/pdf",
+          "size": "3.1MB"
+        },
+        {
+          "name": "Salary_Bands_2024.xlsx",
+          "type": "application/vnd.openxmlformats-officedocument.spreadsheetml.document",
+          "size": "567KB"
+        }
+      ]
+    },
+    {
+      "email_id": "email_004",
+      "sender_email": "david.chen@marketingagency.com",
+      "receiver_emails": ["marketing@techcorp.com"],
+      "cc_emails": ["cmo@techcorp.com"],
+      "bcc_emails": [],
+      "time_received": "2024-01-18T11:22:00Z",
+      "subject": "Q1 2024 Campaign Performance Report",
+      "body": "Hi Marketing Team, Here's our Q1 campaign performance summary. Total ad spend was $287,500 across all channels. Google Ads consumed $125,300 (43.6% of budget) generating 34,567 clicks with 2.8% CTR and $3.62 average CPC. Facebook/Meta ads used $89,400 reaching 2.3 million people, 89,500 link clicks, 1.2% CTR. LinkedIn campaigns spent $45,600 with 12,890 impressions, 356 leads at $128 cost per lead. Display advertising used $27,200 for 5.6 million impressions, 0.45% CTR. Email marketing to our 67,890 subscriber list achieved 22.3% open rate, 3.1% click rate. Our content marketing generated 145,600 website visits, 8,900 downloads, 2,340 newsletter signups. SEO efforts improved rankings for 847 keywords, organic traffic increased 34% to 89,200 monthly visits. Conversion rates: Google Ads 4.2%, Facebook 2.1%, LinkedIn 8.7%, email 5.6%. Total leads generated: 5,678 with average cost per lead of $50.65. Revenue attributed to campaigns: $1.2 million ROI.",
+      "attachments": [
+        {
+          "name": "Q1_2024_Campaign_Analytics.pdf",
+          "type": "application/pdf",
+          "size": "1.9MB"
+        },
+        {
+          "name": "Conversion_Tracking_Data.csv",
+          "type": "text/csv",
+          "size": "445KB"
+        }
+      ]
+    },
+    {
+      "email_id": "email_005",
+      "sender_email": "alex.johnson@property-mgmt.com",
+      "receiver_emails": ["facilities@techcorp.com"],
+      "cc_emails": ["finance@techcorp.com"],
+      "bcc_emails": [],
+      "time_received": "2024-01-19T16:30:00Z",
+      "subject": "Office Lease Renewal - Downtown Location",
+      "body": "Dear Facilities Team, Our downtown office lease expires June 30th, 2024. Current lease details: 45,000 sq ft at $28.50 per sq ft annually ($1,282,500/year). The landlord proposes a 5-year renewal with the following terms: Years 1-2: $31.25/sq ft ($1,406,250 annually), Years 3-4: $33.75/sq ft ($1,518,750 annually), Year 5: $35.50/sq ft ($1,597,500 annually). Total 5-year cost: $7,521,250. Additional costs: $3.85/sq ft CAM charges ($173,250/year), $2.20/sq ft property taxes ($99,000/year), $1.15/sq ft insurance ($51,750/year). Parking: 95 spaces at $165/month each ($187,725/year). Utilities average $8,900/month ($106,800/year). The space accommodates 285 employees comfortably, 320 at maximum capacity. Alternative location (suburban): 50,000 sq ft at $19.75/sq ft ($987,500/year) with 150 parking spaces at $95/month. Move costs estimated at $485,000 including IT setup, furniture, and downtime. Current location benefits: 12-minute average commute vs 28-minute suburban, $2.1M in tax incentives remaining through 2026.",
+      "attachments": [
+        {
+          "name": "Lease_Renewal_Proposal.pdf",
+          "type": "application/pdf",
+          "size": "1.5MB"
+        },
+        {
+          "name": "Alternative_Location_Analysis.xlsx",
+          "type": "application/vnd.openxmlformats-officedocument.spreadsheetml.document",
+          "size": "723KB"
+        }
+      ]
+    },
+    {
+      "email_id": "email_006",
+      "sender_email": "sarah.williams@techinsurance.com",
+      "receiver_emails": ["risk@techcorp.com"],
+      "cc_emails": ["legal@techcorp.com", "cfo@techcorp.com"],
+      "bcc_emails": [],
+      "time_received": "2024-01-20T10:45:00Z",
+      "subject": "2024 Insurance Policy Renewal Quote",
+      "body": "Risk Management Team, Your 2024 insurance renewal quote is ready. General Liability: $125,000 annual premium for $5M coverage ($10M aggregate). Professional Liability: $89,500 premium for $3M per claim, $6M aggregate. Cyber Security coverage: $156,750 for $10M limit including business interruption. Directors & Officers: $67,300 for $15M coverage. Workers Compensation: $234,600 based on 342 employees, $89.2M payroll. Commercial Property: $78,900 for $45M building value, $12M contents. Business Interruption: $45,200 for $2M monthly coverage, 24-month period. Auto Fleet: $34,800 for 23 vehicles, $1M liability each. Employment Practices: $28,500 for $2M coverage. Crime/Fidelity: $15,600 for $1M employee dishonesty. Total annual premium: $901,700 (8.2% increase from $833,400 last year). Payment options: lump sum 3% discount ($873,649), quarterly payments $225,425 each, monthly at $75,142. Claims history: 3 claims totaling $145,600 in past 2 years. Loss ratio: 14.2% (excellent). Deductibles: $25K general, $50K cyber, $10K property.",
+      "attachments": [
+        {
+          "name": "Insurance_Quote_2024.pdf",
+          "type": "application/pdf",
+          "size": "2.3MB"
+        },
+        {
+          "name": "Claims_History_Report.pdf",
+          "type": "application/pdf",
+          "size": "890KB"
+        }
+      ]
+    },
+    {
+      "email_id": "email_007",
+      "sender_email": "mike.taylor@cloudsecurity.com",
+      "receiver_emails": ["it@techcorp.com"],
+      "cc_emails": ["security@techcorp.com"],
+      "bcc_emails": [],
+      "time_received": "2024-01-21T13:15:00Z",
+      "subject": "Security Audit Results & Recommendations",
+      "body": "IT Security Team, Our comprehensive security audit is complete. We scanned 1,247 endpoints, 89 servers, 156 network devices. Findings: 23 critical vulnerabilities (down from 67 last quarter), 145 medium-risk issues, 289 low-risk items. Patch compliance: 94.7% (target: 98%). Our SOC monitored 2.3M security events, blocked 45,670 threats, quarantined 892 suspicious files. Password policy compliance: 87% of users have strong passwords, 234 accounts need MFA setup. Network security: 99.2% uptime, average response time 0.34ms. Detected 12 attempted intrusions (all blocked), 3,456 phishing emails filtered. Data backup verification: 99.8% success rate, 156TB backed up daily, recovery time objective 4 hours, recovery point objective 15 minutes. SSL certificates: 23 expiring in next 90 days. Recommendations: $89,500 budget for security tools upgrade, train 89 employees on security awareness ($12,600), implement zero-trust architecture ($234,000 first year). Current security spend: $567,800 annually. Industry benchmark: $1,245 per employee (we're at $1,661).",
+      "attachments": [
+        {
+          "name": "Security_Audit_Report_Jan2024.pdf",
+          "type": "application/pdf",
+          "size": "4.2MB"
+        },
+        {
+          "name": "Vulnerability_Scan_Results.xlsx",
+          "type": "application/vnd.openxmlformats-officedocument.spreadsheetml.document",
+          "size": "1.8MB"
+        }
+      ]
+    },
+    {
+      "email_id": "email_008",
+      "sender_email": "lisa.brown@lawfirm.com",
+      "receiver_emails": ["legal@techcorp.com"],
+      "cc_emails": ["ceo@techcorp.com"],
+      "bcc_emails": [],
+      "time_received": "2024-01-22T09:00:00Z",
+      "subject": "Contract Negotiations Update - Enterprise Client",
+      "body": "Legal Team, Update on MegaCorp enterprise contract negotiations. Deal value: $12.8M over 3 years ($4.27M annually). Key terms agreed: Implementation timeline 180 days, SLA 99.9% uptime ($25,000 penalty per 0.1% below), payment terms Net 45 days. Support included: 24/7 tier-1 support, 2-hour response time, dedicated customer success manager ($180K annual cost). Licensing: Up to 5,000 users, additional users $45/month each. Data retention: 7 years, hosted in US-East region. Termination clause: 90-day notice, data export included. Liability cap: $2.5M annually. IP warranties standard. Professional services: 480 hours included ($240K value), additional hours $500 each. Training: 40 seats included ($60K value). Integration support: 120 hours included ($60K value). Revenue recognition: Monthly over contract term. Commission: $384K to sales team (3% of total). Legal fees to date: $67,500. Contract signature expected January 30th. First payment $1.42M due 30 days after signature.",
+      "attachments": [
+        {
+          "name": "MegaCorp_Contract_Draft_v8.pdf",
+          "type": "application/pdf",
+          "size": "3.7MB"
+        },
+        {
+          "name": "Terms_Comparison_Sheet.xlsx",
+          "type": "application/vnd.openxmlformats-officedocument.spreadsheetml.document",
+          "size": "445KB"
+        }
+      ]
+    },
+    {
+      "email_id": "email_009",
+      "sender_email": "robert.davis@datacenter.com",
+      "receiver_emails": ["infrastructure@techcorp.com"],
+      "cc_emails": ["it@techcorp.com"],
+      "bcc_emails": [],
+      "time_received": "2024-01-23T15:30:00Z",
+      "subject": "Data Center Migration Plan & Costs",
+      "body": "Infrastructure Team, Data center migration plan finalized. Current setup: 45 physical servers, 234 VMs, 156TB storage, 2.5Gbps bandwidth. New facility specs: 99.99% uptime SLA, N+1 redundancy, 24/7 NOC support. Migration timeline: 6 months, 3 phases. Phase 1 (Months 1-2): Non-critical systems, 89 VMs, estimated downtime 4 hours total. Phase 2 (Months 3-4): Production databases, 78 VMs, estimated downtime 8 hours over weekend. Phase 3 (Months 5-6): Core applications, 67 VMs, estimated downtime 12 hours maximum. Costs: Migration services $345,000, new hardware $1.2M, network setup $234,000, software licenses $156,000, staff overtime $89,000. Monthly ongoing: Colocation $45,600, bandwidth $12,300, support $8,900, backup services $3,400. Total first-year cost: $2.67M. Current annual costs: $1.89M. Break-even: Month 18. Performance improvements: 40% faster processing, 99.99% vs current 99.7% uptime, 50% more storage capacity. Risk mitigation: $2M insurance coverage, 72-hour backup power, dual ISP connections.",
+      "attachments": [
+        {
+          "name": "Data_Center_Migration_Plan.pdf",
+          "type": "application/pdf",
+          "size": "2.9MB"
+        },
+        {
+          "name": "Cost_Benefit_Analysis.xlsx",
+          "type": "application/vnd.openxmlformats-officedocument.spreadsheetml.document",
+          "size": "1.1MB"
+        }
+      ]
+    },
+    {
+      "email_id": "email_010",
+      "sender_email": "jennifer.wilson@consultingfirm.com",
+      "receiver_emails": ["strategy@techcorp.com"],
+      "cc_emails": ["ceo@techcorp.com", "board@techcorp.com"],
+      "bcc_emails": [],
+      "time_received": "2024-01-24T11:45:00Z",
+      "subject": "Market Expansion Analysis - European Markets",
+      "body": "Strategy Team, European market expansion analysis complete. Target markets: Germany, France, UK. Market sizes: Germany €2.8B TAM, France €1.9B, UK €2.1B. Combined opportunity: €6.8B over 5 years. Entry strategy: Direct sales Germany (largest market), partnerships France/UK initially. Investment required: €12.5M over 18 months. Staff: 67 new hires (23 Germany, 22 France, 22 UK), average salary €75K. Office setup: €2.1M (€750K per location). Marketing: €3.4M launch campaign, €1.8M annually ongoing. Legal/compliance: €890K setup, €340K annual. Technology localization: €1.2M development, €450K annual maintenance. Revenue projections: Year 1 €4.2M, Year 2 €12.8M, Year 3 €28.5M, Year 4 €45.7M, Year 5 €67.3M. Break-even: Month 24. ROI: 234% by Year 5. Competitive landscape: 12 major competitors, market share opportunities 8-15% realistic. Customer acquisition cost: €1,245 blended average. Customer lifetime value: €15,670 average. Conversion rates expected: 2.8% Germany, 2.1% France, 3.2% UK.",
+      "attachments": [
+        {
+          "name": "European_Market_Analysis.pdf",
+          "type": "application/pdf",
+          "size": "5.1MB"
+        },
+        {
+          "name": "Financial_Projections_5yr.xlsx",
+          "type": "application/vnd.openxmlformats-officedocument.spreadsheetml.document",
+          "size": "2.3MB"
+        },
+        {
+          "name": "Competitive_Landscape.pptx",
+          "type": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+          "size": "8.7MB"
+        }
+      ]
+    }
+  ]
+}
