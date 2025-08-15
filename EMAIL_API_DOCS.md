@@ -1,16 +1,21 @@
 # Email RAG System API Documentation
 
-This document provides complete API documentation for the Email RAG (Retrieval-Augmented Generation) system that allows you to ingest, store, and query email data using AI-powered semantic search.
+This document provides complete API documentation for the Email RAG (Retrieval-Augmented Generation) system that allows you to ingest, store, and query email data using AI-powered semantic search with **data isolation per user**.
 
 ## Overview
 
 The Email RAG API provides endpoints for:
-- **Email Ingestion**: Store multiple emails in JSON format
+- **Email Ingestion**: Store multiple emails in JSON format with user isolation
 - **AI-Powered Queries**: Ask natural language questions about your emails
-- **Email Management**: List, search, filter, and delete emails
+- **Email Management**: List, search, filter, and delete emails per user
 - **Statistics & Health**: Monitor system status and collection statistics
+- **Data Isolation**: Complete separation of email data between different users
 
-**Note**: For ChromaDB compatibility, email metadata fields that are arrays (like `receiver_emails`, `cc_emails`, `bcc_emails`) are converted to comma-separated strings internally. The API accepts both array and string formats for input, but responses may show these fields as strings.
+**Important Notes**:
+- **Data Isolation**: All endpoints require a `userID` parameter to ensure complete data separation between users
+- **User Collections**: Each user gets their own isolated ChromaDB collection (e.g., `email_rag_user123`)
+- **Security**: Users can only access their own emails - no cross-user data leakage possible
+- For ChromaDB compatibility, email metadata fields that are arrays (like `receiver_emails`, `cc_emails`, `bcc_emails`) are converted to comma-separated strings internally
 
 ## Base URL
 
@@ -47,8 +52,10 @@ Expected response:
 curl -X POST http://3.6.147.238:3000/api/emails/ingest \
   -H "Content-Type: application/json" \
   -d '{
+    "userID": "user_123",
     "emails": [
       {
+        "userID": "user_123",
         "email_id": "test_001",
         "sender_email": "john@company.com",
         "receiver_emails": ["team@company.com"],
@@ -65,6 +72,7 @@ curl -X POST http://3.6.147.238:3000/api/emails/ingest \
 curl -X POST http://3.6.147.238:3000/api/emails/query \
   -H "Content-Type: application/json" \
   -d '{
+    "userID": "user_123",
     "query": "What is the project status?",
     "topK": 5
   }'
@@ -72,7 +80,7 @@ curl -X POST http://3.6.147.238:3000/api/emails/query \
 
 ### Step 4: List Your Emails
 ```bash
-curl "http://3.6.147.238:3000/api/emails/list?limit=10"
+curl "http://3.6.147.238:3000/api/emails/list?userID=user_123&limit=10"
 ```
 
 ## Email Data Format
@@ -81,6 +89,7 @@ Emails should be submitted in the following JSON format:
 
 ```json
 {
+  "userID": "user_123",
   "email_id": "unique_email_identifier",
   "sender_email": "sender@domain.com",
   "receiver_emails": ["recipient1@domain.com", "recipient2@domain.com"],
@@ -100,6 +109,7 @@ Emails should be submitted in the following JSON format:
 ```
 
 ### Required Fields
+- `userID`: User identifier for data isolation (must be a non-empty string)
 - `email_id`: Unique identifier for the email
 - `sender_email`: Valid email address of the sender
 - `receiver_emails`: Array of recipient email addresses (or single string)
@@ -124,15 +134,15 @@ When emails are stored in the vector database, array fields are converted to com
 ### Workflow 1: Email Analysis Dashboard
 ```bash
 # 1. Get overall statistics
-curl http://3.6.147.238:3000/api/emails/stats
+curl "http://3.6.147.238:3000/api/emails/stats?userID=user_123"
 
 # 2. List recent emails
-curl "http://3.6.147.238:3000/api/emails/list?limit=50"
+curl "http://3.6.147.238:3000/api/emails/list?userID=user_123&limit=50"
 
 # 3. Search for important emails
 curl -X POST http://3.6.147.238:3000/api/emails/search \
   -H "Content-Type: application/json" \
-  -d '{"query": "urgent", "has_attachments": true}'
+  -d '{"userID": "user_123", "query": "urgent", "has_attachments": true}'
 ```
 
 ### Workflow 2: Customer Support Inbox
@@ -140,15 +150,15 @@ curl -X POST http://3.6.147.238:3000/api/emails/search \
 # 1. Ingest support emails
 curl -X POST http://3.6.147.238:3000/api/emails/ingest \
   -H "Content-Type: application/json" \
-  -d '{"emails": [...]}'
+  -d '{"userID": "support_agent_1", "emails": [...]}'
 
 # 2. Find emails about specific issues
 curl -X POST http://3.6.147.238:3000/api/emails/query \
   -H "Content-Type: application/json" \
-  -d '{"query": "login problems", "topK": 10}'
+  -d '{"userID": "support_agent_1", "query": "login problems", "topK": 10}'
 
 # 3. Filter by customer domain
-curl "http://3.6.147.238:3000/api/emails/list?sender_domain=customer.com"
+curl "http://3.6.147.238:3000/api/emails/list?userID=support_agent_1&sender_domain=customer.com"
 ```
 
 ### Workflow 3: Invoice Processing
@@ -157,6 +167,7 @@ curl "http://3.6.147.238:3000/api/emails/list?sender_domain=customer.com"
 curl -X POST http://3.6.147.238:3000/api/emails/search \
   -H "Content-Type: application/json" \
   -d '{
+    "userID": "finance_team",
     "query": "invoice payment",
     "has_attachments": true,
     "subject_contains": "invoice"
@@ -165,21 +176,21 @@ curl -X POST http://3.6.147.238:3000/api/emails/search \
 # 2. Get payment-related information
 curl -X POST http://3.6.147.238:3000/api/emails/query \
   -H "Content-Type: application/json" \
-  -d '{"query": "What invoices are due this month?"}'
+  -d '{"userID": "finance_team", "query": "What invoices are due this month?"}'
 ```
 
 ### Workflow 4: Email Cleanup
 ```bash
 # 1. Find spam emails
-curl "http://3.6.147.238:3000/api/emails/list?sender_domain=spam.com"
+curl "http://3.6.147.238:3000/api/emails/list?userID=user_123&sender_domain=spam.com"
 
 # 2. Delete spam by domain
 curl -X POST http://3.6.147.238:3000/api/emails/delete-batch \
   -H "Content-Type: application/json" \
-  -d '{"filters": {"sender_domain": "spam.com"}}'
+  -d '{"userID": "user_123", "filters": {"sender_domain": "spam.com"}}'
 
 # 3. Verify deletion
-curl http://3.6.147.238:3000/api/emails/stats
+curl "http://3.6.147.238:3000/api/emails/stats?userID=user_123"
 ```
 
 ## API Endpoints
@@ -193,8 +204,10 @@ Ingest multiple emails into the vector database.
 #### Request Body
 ```json
 {
+  "userID": "user_123",
   "emails": [
     {
+      "userID": "user_123",
       "email_id": "email_001",
       "sender_email": "john@company.com",
       "receiver_emails": ["team@company.com"],
@@ -212,6 +225,7 @@ Ingest multiple emails into the vector database.
   "success": true,
   "message": "Emails processed and ingested successfully",
   "data": {
+    "userID": "user_123",
     "totalSubmitted": 1,
     "totalProcessed": 1,
     "totalErrors": 0,
@@ -239,6 +253,7 @@ Query emails using AI-powered semantic search.
 #### Request Body
 ```json
 {
+  "userID": "user_123",
   "query": "What project updates were shared?",
   "topK": 10,
   "filters": {
@@ -250,6 +265,7 @@ Query emails using AI-powered semantic search.
 ```
 
 #### Parameters
+- `userID` (required): User identifier for data isolation
 - `query` (required): Natural language query
 - `topK` (optional): Number of results to return (default: 10)
 - `filters` (optional): Search filters
@@ -261,6 +277,7 @@ Query emails using AI-powered semantic search.
 {
   "success": true,
   "data": {
+    "userID": "user_123",
     "query": "What project updates were shared?",
     "answer": "Based on the emails, John shared a project update indicating that...",
     "confidence": 0.85,
@@ -292,6 +309,7 @@ Query emails using AI-powered semantic search.
 List all emails with optional filtering and pagination.
 
 #### Query Parameters
+- `userID` (required): User identifier for data isolation
 - `sender_email`: Filter by sender email
 - `sender_domain`: Filter by sender domain
 - `has_attachments`: Filter by attachment presence (true/false)
@@ -300,7 +318,7 @@ List all emails with optional filtering and pagination.
 
 #### Example Request
 ```
-GET /api/emails/list?sender_domain=company.com&limit=20&offset=0
+GET /api/emails/list?userID=user_123&sender_domain=company.com&limit=20&offset=0
 ```
 
 #### Response
@@ -308,6 +326,7 @@ GET /api/emails/list?sender_domain=company.com&limit=20&offset=0
 {
   "success": true,
   "data": {
+    "userID": "user_123",
     "emails": [
       {
         "email_id": "email_001",
@@ -343,6 +362,7 @@ GET /api/emails/list?sender_domain=company.com&limit=20&offset=0
 Get statistics about the email collection.
 
 #### Query Parameters
+- `userID` (required): User identifier for data isolation
 - `sender_email`: Get stats for specific sender
 - `sender_domain`: Get stats for specific domain
 
@@ -352,18 +372,19 @@ Get statistics about the email collection.
   "success": true,
   "data": {
     "totalEmails": 150,
+    "userID": "user_123",
     "uniqueSenders": 45,
     "uniqueDomains": 12,
     "totalAttachments": 89,
     "emailsWithAttachments": 67,
     "averageAttachmentsPerEmail": 0.59,
-    "collectionName": "email_rag_collection",
+    "collectionName": "email_rag_user_123",
     "lastUpdated": "2024-01-15T12:00:00Z",
     "health": {
       "healthy": true,
       "emailCollectionExists": true
     },
-    "supportedFields": ["email_id", "sender_email", "cc_emails", ...],
+    "supportedFields": ["userID", "email_id", "sender_email", "cc_emails", ...],
     "serviceStatus": {
       "name": "EmailService",
       "version": "1.0.0",
@@ -383,6 +404,7 @@ Perform advanced search with multiple criteria.
 #### Request Body
 ```json
 {
+  "userID": "user_123",
   "query": "software licenses",
   "sender_email": "vendor@company.com",
   "sender_domain": "vendor.com",
@@ -399,6 +421,7 @@ Perform advanced search with multiple criteria.
 {
   "success": true,
   "data": {
+    "userID": "user_123",
     "query": "software licenses",
     "results": [
       {
@@ -415,6 +438,7 @@ Perform advanced search with multiple criteria.
     ],
     "totalResults": 1,
     "searchParameters": {
+      "userID": "user_123",
       "query": "software licenses",
       "sender_domain": "vendor.com",
       "has_attachments": true
@@ -426,9 +450,9 @@ Perform advanced search with multiple criteria.
 
 ### 6. Delete Email
 
-**DELETE** `/api/emails/{emailId}`
+**DELETE** `/api/emails/{emailId}?userID={userID}`
 
-Delete a specific email by ID.
+Delete a specific email by ID for a specific user.
 
 #### Response
 ```json
@@ -436,7 +460,8 @@ Delete a specific email by ID.
   "success": true,
   "message": "Email deleted successfully",
   "data": {
-    "emailId": "email_001"
+    "emailId": "email_001",
+    "userID": "user_123"
   },
   "timestamp": "2024-01-15T12:00:00Z"
 }
@@ -451,6 +476,7 @@ Delete multiple emails by filters.
 #### Request Body
 ```json
 {
+  "userID": "user_123",
   "filters": {
     "sender_domain": "spam.com"
   }
@@ -464,6 +490,7 @@ Delete multiple emails by filters.
   "message": "Successfully deleted 15 emails",
   "data": {
     "deletedCount": 15,
+    "userID": "user_123",
     "filters": {
       "sender_domain": "spam.com"
     }
@@ -476,11 +503,12 @@ Delete multiple emails by filters.
 
 **POST** `/api/emails/clear`
 
-Clear all emails from the database (requires confirmation).
+Clear all emails for a specific user from the database (requires confirmation).
 
 #### Request Body
 ```json
 {
+  "userID": "user_123",
   "confirm": "DELETE_ALL_EMAILS"
 }
 ```
@@ -489,7 +517,10 @@ Clear all emails from the database (requires confirmation).
 ```json
 {
   "success": true,
-  "message": "All emails cleared successfully",
+  "message": "All emails cleared successfully for user: user_123",
+  "data": {
+    "userID": "user_123"
+  },
   "timestamp": "2024-01-15T12:00:00Z"
 }
 ```
@@ -507,8 +538,10 @@ Check the health of the email service.
   "data": {
     "vectorDatabase": {
       "healthy": true,
-      "emailCollectionExists": true,
-      "collectionName": "email_rag_collection"
+      "totalCollections": 25,
+      "emailCollections": 12,
+      "baseCollectionName": "email_rag",
+      "userCollectionPattern": "email_rag_[userID]"
     },
     "emailService": {
       "name": "EmailService",
@@ -537,8 +570,10 @@ Check the health of the email service.
 curl -X POST http://3.6.147.238:3000/api/emails/ingest \
   -H "Content-Type: application/json" \
   -d '{
+    "userID": "user_123",
     "emails": [
       {
+        "userID": "user_123",
         "email_id": "email_001",
         "sender_email": "john@company.com",
         "receiver_emails": ["team@company.com"],
@@ -555,6 +590,7 @@ curl -X POST http://3.6.147.238:3000/api/emails/ingest \
 curl -X POST http://3.6.147.238:3000/api/emails/query \
   -H "Content-Type: application/json" \
   -d '{
+    "userID": "user_123",
     "query": "What project updates were shared?",
     "topK": 5
   }'
@@ -562,7 +598,7 @@ curl -X POST http://3.6.147.238:3000/api/emails/query \
 
 ### 3. List Emails
 ```bash
-curl "http://3.6.147.238:3000/api/emails/list?limit=10&sender_domain=company.com"
+curl "http://3.6.147.238:3000/api/emails/list?userID=user_123&limit=10&sender_domain=company.com"
 ```
 
 ## Code Examples
@@ -570,34 +606,36 @@ curl "http://3.6.147.238:3000/api/emails/list?limit=10&sender_domain=company.com
 ### JavaScript (Node.js/Browser)
 ```javascript
 // Ingest emails
-async function ingestEmails(emails) {
+async function ingestEmails(emails, userID) {
   const response = await fetch('http://3.6.147.238:3000/api/emails/ingest', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ emails })
+    body: JSON.stringify({ userID, emails })
   });
   return await response.json();
 }
 
 // Query emails with AI
-async function queryEmails(query, topK = 5) {
+async function queryEmails(query, userID, topK = 5) {
   const response = await fetch('http://3.6.147.238:3000/api/emails/query', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, topK })
+    body: JSON.stringify({ userID, query, topK })
   });
   return await response.json();
 }
 
 // List emails with filters
-async function listEmails(filters = {}) {
-  const params = new URLSearchParams(filters);
+async function listEmails(userID, filters = {}) {
+  const params = new URLSearchParams({ userID, ...filters });
   const response = await fetch(`http://3.6.147.238:3000/api/emails/list?${params}`);
   return await response.json();
 }
 
 // Example usage
+const userID = "user_123";
 const emails = [{
+  userID: "user_123",
   email_id: "email_001",
   sender_email: "john@company.com",
   receiver_emails: ["team@company.com"],
@@ -606,9 +644,9 @@ const emails = [{
   body: "Project is progressing well..."
 }];
 
-ingestEmails(emails).then(result => {
+ingestEmails(emails, userID).then(result => {
   console.log('Ingestion result:', result);
-  return queryEmails("What is the project status?");
+  return queryEmails("What is the project status?", userID);
 }).then(answer => {
   console.log('AI Answer:', answer.data.answer);
 });
@@ -622,18 +660,18 @@ from datetime import datetime
 
 BASE_URL = "http://3.6.147.238:3000/api/emails"
 
-def ingest_emails(emails):
+def ingest_emails(emails, user_id):
     """Ingest emails into the system"""
     response = requests.post(
         f"{BASE_URL}/ingest",
         headers={"Content-Type": "application/json"},
-        json={"emails": emails}
+        json={"userID": user_id, "emails": emails}
     )
     return response.json()
 
-def query_emails(query, top_k=5, filters=None):
+def query_emails(query, user_id, top_k=5, filters=None):
     """Query emails using AI"""
-    payload = {"query": query, "topK": top_k}
+    payload = {"userID": user_id, "query": query, "topK": top_k}
     if filters:
         payload["filters"] = filters
     
@@ -644,9 +682,9 @@ def query_emails(query, top_k=5, filters=None):
     )
     return response.json()
 
-def list_emails(sender_email=None, sender_domain=None, limit=50):
+def list_emails(user_id, sender_email=None, sender_domain=None, limit=50):
     """List emails with optional filters"""
-    params = {"limit": limit}
+    params = {"userID": user_id, "limit": limit}
     if sender_email:
         params["sender_email"] = sender_email
     if sender_domain:
@@ -655,15 +693,19 @@ def list_emails(sender_email=None, sender_domain=None, limit=50):
     response = requests.get(f"{BASE_URL}/list", params=params)
     return response.json()
 
-def get_stats():
+def get_stats(user_id):
     """Get email collection statistics"""
-    response = requests.get(f"{BASE_URL}/stats")
+    response = requests.get(f"{BASE_URL}/stats", params={"userID": user_id})
     return response.json()
 
 # Example usage
 if __name__ == "__main__":
+    # User ID for data isolation
+    user_id = "user_123"
+    
     # Sample email data
     emails = [{
+        "userID": user_id,
         "email_id": "email_001",
         "sender_email": "john@company.com",
         "receiver_emails": ["team@company.com"],
@@ -673,15 +715,15 @@ if __name__ == "__main__":
     }]
     
     # Ingest emails
-    ingest_result = ingest_emails(emails)
+    ingest_result = ingest_emails(emails, user_id)
     print("Ingestion result:", ingest_result)
     
     # Query emails
-    query_result = query_emails("What is the project status?")
+    query_result = query_emails("What is the project status?", user_id)
     print("AI Answer:", query_result["data"]["answer"])
     
     # Get statistics
-    stats = get_stats()
+    stats = get_stats(user_id)
     print("Total emails:", stats["data"]["totalEmails"])
 ```
 
@@ -795,5 +837,10 @@ Use `GET /api/emails/health` to monitor:
 
 ## Changelog
 
+- **v1.1.0**: Added complete data isolation with userID requirements
+  - All endpoints now require userID for user-specific data separation
+  - Each user gets their own isolated ChromaDB collection
+  - Complete security isolation - no cross-user data access possible
+  - Updated all API examples and documentation
 - **v1.0.1**: Fixed ChromaDB 422 error by converting array metadata fields to strings for compatibility
 - **v1.0.0**: Initial release with core email RAG functionality

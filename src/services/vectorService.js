@@ -278,21 +278,39 @@ async initialize() {
           throw new Error(`Data validation failed: ${validationResult.error}`);
         }
 
-        // Add to collection all at once for smaller datasets
-        console.log(`📤 Sending ${documents.length} documents to ChromaDB...`);
-        console.log(`📊 Data summary: IDs=${ids.length}, Embeddings=${embeddings.length}, Texts=${texts.length}, Metadata=${metadatas.length}`);
-        
-        // Log sample data for debugging
-        if (documents.length > 0) {
-          console.log(`🔍 Sample data - ID: ${ids[0].substring(0, 20)}..., Text length: ${texts[0].length}, Embedding dims: ${embeddings[0].length}`);
-        }
+              // Add to collection all at once for smaller datasets
+      console.log(`📤 Sending ${documents.length} documents to ChromaDB...`);
+      console.log(`📊 Data summary: IDs=${ids.length}, Embeddings=${embeddings.length}, Texts=${texts.length}, Metadata=${metadatas.length}`);
+      
+      // Log sample data for debugging
+      if (documents.length > 0) {
+        console.log(`🔍 Sample data - ID: ${ids[0].substring(0, 20)}..., Text length: ${texts[0].length}, Embedding dims: ${embeddings[0].length}`);
+      }
 
+      try {
         await this.collection.add({
           ids: ids,
           embeddings: embeddings,
           documents: texts,
           metadatas: metadatas
         });
+      } catch (addError) {
+        // Handle dimension mismatch errors
+        if (addError.message.includes('expecting embedding with dimension')) {
+          console.log('🔄 Detected embedding dimension mismatch, resetting collection...');
+          await this.resetCollection();
+          console.log('📤 Retrying document addition after collection reset...');
+          
+          await this.collection.add({
+            ids: ids,
+            embeddings: embeddings,
+            documents: texts,
+            metadatas: metadatas
+          });
+        } else {
+          throw addError;
+        }
+      }
       }
 
       console.log(`✅ Successfully added ${documents.length} documents to vector database`);
@@ -974,12 +992,30 @@ async initialize() {
 
       // Add chunks to collection
       console.log(`📤 Adding ${chunks.length} chunks to ChromaDB...`);
-      await this.collection.add({
-        ids: chunkIds,
-        embeddings: embeddings,
-        documents: texts,
-        metadatas: metadatas
-      });
+      try {
+        await this.collection.add({
+          ids: chunkIds,
+          embeddings: embeddings,
+          documents: texts,
+          metadatas: metadatas
+        });
+      } catch (addError) {
+        // Handle dimension mismatch errors
+        if (addError.message.includes('expecting embedding with dimension')) {
+          console.log('🔄 Detected embedding dimension mismatch, resetting collection...');
+          await this.resetCollection();
+          console.log('📤 Retrying chunk addition after collection reset...');
+          
+          await this.collection.add({
+            ids: chunkIds,
+            embeddings: embeddings,
+            documents: texts,
+            metadatas: metadatas
+          });
+        } else {
+          throw addError;
+        }
+      }
 
       console.log(`✅ Successfully added ${chunks.length} chunks for document: ${parentDocumentId}`);
       return chunkIds;

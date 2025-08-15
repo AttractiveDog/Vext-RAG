@@ -7,28 +7,53 @@ class EmailVectorService {
     this.client = new ChromaClient({
       path: process.env.CHROMA_URL || 'http://3.6.147.238:8000'
     });
-    this.collection = null;
-    this.collectionName = 'email_rag_collection';
+    this.collections = new Map(); // Store user-specific collections
+    this.baseCollectionName = 'email_rag';
   }
 
   /**
-   * Initialize the email vector database collection
+   * Get user-specific collection name
+   * @param {string} userID - User ID for data isolation
+   * @returns {string} - User-specific collection name
    */
-  async initialize() {
+  getUserCollectionName(userID) {
+    // Sanitize userID for collection name (ChromaDB collection names have restrictions)
+    const sanitizedUserID = userID.replace(/[^a-zA-Z0-9_-]/g, '_');
+    return `${this.baseCollectionName}_${sanitizedUserID}`;
+  }
+
+  /**
+   * Initialize user-specific email vector database collection
+   * @param {string} userID - User ID for data isolation
+   */
+  async initializeUserCollection(userID) {
     try {
-      console.log('🔄 Initializing email vector database...');
+      if (!userID) {
+        throw new Error('userID is required for email data isolation');
+      }
+
+      const collectionName = this.getUserCollectionName(userID);
+      
+      // Check if we already have this collection cached
+      if (this.collections.has(userID)) {
+        console.log(`✅ Using cached email collection for user: ${userID}`);
+        return this.collections.get(userID);
+      }
+
+      console.log(`🔄 Initializing email vector database for user: ${userID}...`);
       
       // Check if collection exists
       try {
         const collections = await this.client.listCollections();
-        const existingCollection = collections.find(col => col.name === this.collectionName);
+        const existingCollection = collections.find(col => col.name === collectionName);
         
         if (existingCollection) {
-          this.collection = await this.client.getCollection({
-            name: this.collectionName
+          const collection = await this.client.getCollection({
+            name: collectionName
           });
-          console.log(`✅ Connected to existing email collection: ${this.collectionName}`);
-          return true;
+          this.collections.set(userID, collection);
+          console.log(`✅ Connected to existing email collection for user ${userID}: ${collectionName}`);
+          return collection;
         }
       } catch (listError) {
         console.log('Could not list collections, will attempt to get/create collection directly');
@@ -36,63 +61,71 @@ class EmailVectorService {
       
       // Try to get existing collection
       try {
-        this.collection = await this.client.getCollection({
-          name: this.collectionName
+        const collection = await this.client.getCollection({
+          name: collectionName
         });
-        console.log(`✅ Connected to existing email collection: ${this.collectionName}`);
-        return true;
+        this.collections.set(userID, collection);
+        console.log(`✅ Connected to existing email collection for user ${userID}: ${collectionName}`);
+        return collection;
       } catch (getError) {
         // Collection doesn't exist, create it
-        console.log(`Creating new email collection: ${this.collectionName}`);
+        console.log(`Creating new email collection for user ${userID}: ${collectionName}`);
         
         try {
-          this.collection = await this.client.createCollection({
-            name: this.collectionName,
+          const collection = await this.client.createCollection({
+            name: collectionName,
             metadata: {
-              description: 'Email RAG System Collection',
+              description: `Email RAG System Collection for User ${userID}`,
               document_type: 'email',
+              userID: userID,
               created_at: new Date().toISOString()
             }
           });
-          console.log(`✅ Email vector database initialized: ${this.collectionName}`);
-          return true;
+          this.collections.set(userID, collection);
+          console.log(`✅ Email vector database initialized for user ${userID}: ${collectionName}`);
+          return collection;
         } catch (createError) {
           if (createError.message.includes('already exists') || createError.message.includes('UniqueError')) {
             console.log(`Email collection was created by another process, connecting...`);
-            this.collection = await this.client.getCollection({
-              name: this.collectionName
+            const collection = await this.client.getCollection({
+              name: collectionName
             });
-            console.log(`✅ Connected to email collection after race condition: ${this.collectionName}`);
-            return true;
+            this.collections.set(userID, collection);
+            console.log(`✅ Connected to email collection after race condition for user ${userID}: ${collectionName}`);
+            return collection;
           }
           throw createError;
         }
       }
     } catch (error) {
-      console.error('❌ Error initializing email vector database:', error);
-      throw new Error(`Failed to initialize email vector database: ${error.message}`);
+      console.error(`❌ Error initializing email vector database for user ${userID}:`, error);
+      throw new Error(`Failed to initialize email vector database for user ${userID}: ${error.message}`);
     }
   }
 
   /**
    * Add emails to the vector database
    * @param {Array<{text: string, metadata: Object}>} emailDocuments - Email documents to add
+   * @param {string} userID - User ID for data isolation (required)
    * @returns {Promise<Array<string>>} - Array of document IDs
    */
-  async addEmails(emailDocuments) {
+  async addEmails(emailDocuments, userID) {
     try {
-      if (!this.collection) {
-        await this.initialize();
+      if (!userID) {
+        throw new Error('userID is required for email data isolation');
       }
 
       if (!Array.isArray(emailDocuments) || emailDocuments.length === 0) {
         throw new Error('Email documents must be a non-empty array');
       }
 
-      console.log(`📧 Adding ${emailDocuments.length} emails to vector database...`);
+      // Get user-specific collection
+      const collection = await this.initializeUserCollection(userID);
+
+      console.log(`📧 Adding ${emailDocuments.length} emails to vector database for user: ${userID}...`);
 
       // Validate and clean email documents
-      const cleanedDocuments = this.validateAndCleanEmailDocuments(emailDocuments);
+      const cleanedDocuments = this.validateAndCleanEmailDocuments(emailDocuments, userID);
       
       // Extract text content for embedding generation
       const texts = cleanedDocuments.map(doc => doc.text);
@@ -106,55 +139,59 @@ class EmailVectorService {
         doc.metadata.document_id || `email_${uuidv4()}`
       );
       
-      // Prepare metadata for ChromaDB
+      // Prepare metadata for ChromaDB (userID already included in cleaned documents)
       const metadatas = cleanedDocuments.map(doc => ({
         ...doc.metadata,
         document_type: 'email',
         indexed_at: new Date().toISOString()
       }));
 
-      // Add to ChromaDB collection
-      await this.collection.add({
+      // Add to user-specific ChromaDB collection
+      await collection.add({
         ids: emailIds,
         embeddings: embeddings,
         documents: texts,
         metadatas: metadatas
       });
 
-      console.log(`✅ Successfully added ${emailDocuments.length} emails to vector database`);
+      console.log(`✅ Successfully added ${emailDocuments.length} emails to vector database for user: ${userID}`);
       return emailIds;
     } catch (error) {
-      console.error('❌ Error adding emails to vector database:', error);
-      throw new Error(`Failed to add emails: ${error.message}`);
+      console.error(`❌ Error adding emails to vector database for user ${userID}:`, error);
+      throw new Error(`Failed to add emails for user ${userID}: ${error.message}`);
     }
   }
 
   /**
    * Search emails using semantic search
    * @param {string} query - Search query
+   * @param {string} userID - User ID for data isolation (required)
    * @param {number} topK - Number of results to return
    * @param {Object} filters - Search filters
    * @returns {Promise<Array>} - Search results
    */
-  async searchEmails(query, topK = 5, filters = {}) {
+  async searchEmails(query, userID, topK = 5, filters = {}) {
     try {
-      if (!this.collection) {
-        await this.initialize();
+      if (!userID) {
+        throw new Error('userID is required for email data isolation');
       }
 
-      console.log(`🔍 Searching emails for: "${query}"`);
+      // Get user-specific collection
+      const collection = await this.initializeUserCollection(userID);
+
+      console.log(`🔍 Searching emails for user ${userID}: "${query}"`);
 
       // Generate query embedding
       const queryEmbedding = await vextService.embedText(query);
 
-      // Prepare ChromaDB filters
+      // Prepare ChromaDB filters (userID is enforced by collection isolation)
       const chromaFilters = {
         document_type: 'email',
         ...filters
       };
 
-      // Search in collection
-      const results = await this.collection.query({
+      // Search in user-specific collection
+      const results = await collection.query({
         queryEmbeddings: [queryEmbedding],
         nResults: topK,
         where: chromaFilters
@@ -175,31 +212,35 @@ class EmailVectorService {
         };
       });
 
-      console.log(`✅ Found ${formattedResults.length} relevant emails`);
+      console.log(`✅ Found ${formattedResults.length} relevant emails for user: ${userID}`);
       return formattedResults;
     } catch (error) {
-      console.error('❌ Error searching emails:', error);
-      throw new Error(`Failed to search emails: ${error.message}`);
+      console.error(`❌ Error searching emails for user ${userID}:`, error);
+      throw new Error(`Failed to search emails for user ${userID}: ${error.message}`);
     }
   }
 
   /**
    * Get all emails from the database
+   * @param {string} userID - User ID for data isolation (required)
    * @param {Object} filters - Optional filters
    * @returns {Promise<Array>} - All emails
    */
-  async getAllEmails(filters = {}) {
+  async getAllEmails(userID, filters = {}) {
     try {
-      if (!this.collection) {
-        await this.initialize();
+      if (!userID) {
+        throw new Error('userID is required for email data isolation');
       }
+
+      // Get user-specific collection
+      const collection = await this.initializeUserCollection(userID);
 
       const chromaFilters = {
         document_type: 'email',
         ...filters
       };
 
-      const results = await this.collection.get({
+      const results = await collection.get({
         where: chromaFilters
       });
       
@@ -209,47 +250,55 @@ class EmailVectorService {
         metadata: results.metadatas[index]
       }));
     } catch (error) {
-      console.error('❌ Error getting all emails:', error);
-      throw new Error(`Failed to get emails: ${error.message}`);
+      console.error(`❌ Error getting all emails for user ${userID}:`, error);
+      throw new Error(`Failed to get emails for user ${userID}: ${error.message}`);
     }
   }
 
   /**
    * Delete an email by ID
    * @param {string} emailId - Email ID to delete
+   * @param {string} userID - User ID for data isolation (required)
    * @returns {Promise<boolean>} - Success status
    */
-  async deleteEmail(emailId) {
+  async deleteEmail(emailId, userID) {
     try {
-      if (!this.collection) {
-        await this.initialize();
+      if (!userID) {
+        throw new Error('userID is required for email data isolation');
       }
 
-      await this.collection.delete({
+      // Get user-specific collection
+      const collection = await this.initializeUserCollection(userID);
+
+      await collection.delete({
         ids: [emailId]
       });
 
-      console.log(`✅ Successfully deleted email: ${emailId}`);
+      console.log(`✅ Successfully deleted email: ${emailId} for user: ${userID}`);
       return true;
     } catch (error) {
-      console.error('❌ Error deleting email:', error);
-      throw new Error(`Failed to delete email: ${error.message}`);
+      console.error(`❌ Error deleting email for user ${userID}:`, error);
+      throw new Error(`Failed to delete email for user ${userID}: ${error.message}`);
     }
   }
 
   /**
    * Delete multiple emails by filters
+   * @param {string} userID - User ID for data isolation (required)
    * @param {Object} filters - Filters to identify emails to delete
    * @returns {Promise<number>} - Number of emails deleted
    */
-  async deleteEmailsByFilters(filters = {}) {
+  async deleteEmailsByFilters(userID, filters = {}) {
     try {
-      if (!this.collection) {
-        await this.initialize();
+      if (!userID) {
+        throw new Error('userID is required for email data isolation');
       }
 
+      // Get user-specific collection
+      const collection = await this.initializeUserCollection(userID);
+
       // Get emails matching filters
-      const emailsToDelete = await this.getAllEmails(filters);
+      const emailsToDelete = await this.getAllEmails(userID, filters);
       
       if (emailsToDelete.length === 0) {
         console.log('📭 No emails found matching filters');
@@ -258,41 +307,46 @@ class EmailVectorService {
 
       // Delete all matching emails
       const emailIds = emailsToDelete.map(email => email.id);
-      await this.collection.delete({
+      await collection.delete({
         ids: emailIds
       });
 
-      console.log(`✅ Successfully deleted ${emailIds.length} emails`);
+      console.log(`✅ Successfully deleted ${emailIds.length} emails for user: ${userID}`);
       return emailIds.length;
     } catch (error) {
-      console.error('❌ Error deleting emails by filters:', error);
-      throw new Error(`Failed to delete emails: ${error.message}`);
+      console.error(`❌ Error deleting emails by filters for user ${userID}:`, error);
+      throw new Error(`Failed to delete emails for user ${userID}: ${error.message}`);
     }
   }
 
   /**
    * Get email collection statistics
+   * @param {string} userID - User ID for data isolation (required)
    * @param {Object} filters - Optional filters
    * @returns {Promise<Object>} - Collection statistics
    */
-  async getEmailStats(filters = {}) {
+  async getEmailStats(userID, filters = {}) {
     try {
-      if (!this.collection) {
-        await this.initialize();
+      if (!userID) {
+        throw new Error('userID is required for email data isolation');
       }
+
+      // Get user-specific collection
+      await this.initializeUserCollection(userID);
 
       const chromaFilters = {
         document_type: 'email',
         ...filters
       };
 
-      // Get all emails matching filters
-      const emails = await this.getAllEmails(chromaFilters);
+      // Get all emails matching filters for this user
+      const emails = await this.getAllEmails(userID, chromaFilters);
       
       // Calculate statistics
       const stats = {
         totalEmails: emails.length,
-        collectionName: this.collectionName,
+        userID: userID,
+        collectionName: this.getUserCollectionName(userID),
         lastUpdated: new Date().toISOString()
       };
 
@@ -329,51 +383,56 @@ class EmailVectorService {
       
       return stats;
     } catch (error) {
-      console.error('❌ Error getting email stats:', error);
-      throw new Error(`Failed to get email stats: ${error.message}`);
+      console.error(`❌ Error getting email stats for user ${userID}:`, error);
+      throw new Error(`Failed to get email stats for user ${userID}: ${error.message}`);
     }
   }
 
   /**
    * Clear all emails from the collection
+   * @param {string} userID - User ID for data isolation (required)
    * @returns {Promise<boolean>} - Success status
    */
-  async clearAllEmails() {
+  async clearAllEmails(userID) {
     try {
-      if (!this.collection) {
-        await this.initialize();
+      if (!userID) {
+        throw new Error('userID is required for email data isolation');
       }
 
-      console.log('🔄 Clearing all emails from collection...');
+      // Get user-specific collection
+      const collection = await this.initializeUserCollection(userID);
+
+      console.log(`🔄 Clearing all emails from collection for user: ${userID}...`);
       
-      // Get all email IDs
-      const emails = await this.getAllEmails();
+      // Get all email IDs for this user
+      const emails = await this.getAllEmails(userID);
       
       if (emails.length === 0) {
-        console.log('📭 No emails to clear');
+        console.log(`📭 No emails to clear for user: ${userID}`);
         return true;
       }
 
-      // Delete all emails
+      // Delete all emails for this user
       const emailIds = emails.map(email => email.id);
-      await this.collection.delete({
+      await collection.delete({
         ids: emailIds
       });
 
-      console.log(`✅ Successfully cleared ${emailIds.length} emails`);
+      console.log(`✅ Successfully cleared ${emailIds.length} emails for user: ${userID}`);
       return true;
     } catch (error) {
-      console.error('❌ Error clearing emails:', error);
-      throw new Error(`Failed to clear emails: ${error.message}`);
+      console.error(`❌ Error clearing emails for user ${userID}:`, error);
+      throw new Error(`Failed to clear emails for user ${userID}: ${error.message}`);
     }
   }
 
   /**
    * Validate and clean email documents
    * @param {Array} emailDocuments - Email documents to validate
+   * @param {string} userID - User ID for data isolation
    * @returns {Array} - Cleaned email documents
    */
-  validateAndCleanEmailDocuments(emailDocuments) {
+  validateAndCleanEmailDocuments(emailDocuments, userID) {
     return emailDocuments.map((doc, index) => {
       // Validate document structure
       if (!doc || typeof doc !== 'object') {
@@ -405,6 +464,11 @@ class EmailVectorService {
         ...doc.metadata,
         document_type: 'email'
       };
+
+      // Ensure userID is present for data isolation
+      if (!metadata.userID && userID) {
+        metadata.userID = userID;
+      }
 
       // Ensure email_id exists
       if (!metadata.email_id) {
@@ -468,21 +532,17 @@ class EmailVectorService {
       const collections = await this.client.listCollections();
       console.log(`✅ Email vector database connection healthy`);
       
-      // Check if our collection exists
-      let collectionExists = false;
-      try {
-        await this.client.getCollection({ name: this.collectionName });
-        collectionExists = true;
-        console.log(`✅ Email collection '${this.collectionName}' exists`);
-      } catch (error) {
-        console.log(`⚠️ Email collection '${this.collectionName}' does not exist`);
-      }
+      // Count email collections (user-specific collections)
+      const emailCollections = collections.filter(col => 
+        col.name.startsWith(this.baseCollectionName)
+      );
       
       return {
         healthy: true,
-        collections: collections.length,
-        emailCollectionExists: collectionExists,
-        collectionName: this.collectionName,
+        totalCollections: collections.length,
+        emailCollections: emailCollections.length,
+        baseCollectionName: this.baseCollectionName,
+        userCollectionPattern: `${this.baseCollectionName}_[userID]`,
         timestamp: new Date().toISOString()
       };
     } catch (error) {
@@ -498,10 +558,15 @@ class EmailVectorService {
   /**
    * Advanced email search with multiple criteria
    * @param {Object} searchParams - Search parameters
+   * @param {string} userID - User ID for data isolation (required)
    * @returns {Promise<Array>} - Search results
    */
-  async advancedEmailSearch(searchParams) {
+  async advancedEmailSearch(searchParams, userID) {
     try {
+      if (!userID) {
+        throw new Error('userID is required for email data isolation');
+      }
+
       const {
         query,
         sender_email,
@@ -532,7 +597,7 @@ class EmailVectorService {
       // as ChromaDB's filtering capabilities vary
 
       // Perform the search
-      const results = await this.searchEmails(query, topK, filters);
+      const results = await this.searchEmails(query, userID, topK, filters);
 
       // Additional client-side filtering if needed
       let filteredResults = results;
@@ -563,11 +628,11 @@ class EmailVectorService {
         });
       }
 
-      console.log(`🔍 Advanced search found ${filteredResults.length} emails`);
+      console.log(`🔍 Advanced search found ${filteredResults.length} emails for user: ${userID}`);
       return filteredResults;
     } catch (error) {
-      console.error('❌ Error in advanced email search:', error);
-      throw new Error(`Advanced email search failed: ${error.message}`);
+      console.error(`❌ Error in advanced email search for user ${userID}:`, error);
+      throw new Error(`Advanced email search failed for user ${userID}: ${error.message}`);
     }
   }
 }

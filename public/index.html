@@ -372,7 +372,7 @@
     <div class="container">
         <div class="header">
             <h1>🔍 Vext RAG System</h1>
-            <p>Intelligent Document Retrieval and Question Answering</p>
+            <p>Local AI-Powered Document Analysis with Semantic Search</p>
         </div>
 
         <div class="main">
@@ -394,6 +394,14 @@
                             <li>Ask questions about your documents</li>
                             <li>View your documents and statistics</li>
                         </ol>
+                    </div>
+                    <div style="margin-top: 15px; padding: 15px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #27ae60;">
+                        <strong>🔒 Privacy Features:</strong>
+                        <ul style="margin: 10px 0 0 20px; color: #333;">
+                            <li><strong>Local Embeddings:</strong> Document processing happens locally using Hugging Face models</li>
+                            <li><strong>User Isolation:</strong> Your documents are completely isolated by User ID</li>
+                            <li><strong>Hybrid Processing:</strong> Local embeddings + Groq AI for optimal privacy and performance</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -425,12 +433,21 @@
                     <textarea id="question" rows="3" placeholder="Ask a question about your uploaded documents..."></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="model">AI Model:</label>
-                    <select id="model">
-                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                        <option value="gpt-4">GPT-4</option>
-                        <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
-                    </select>
+                    <label for="model">AI Configuration:</label>
+                    <div style="background: #f8f9fa; border: 1px solid #e1e5e9; border-radius: 8px; padding: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span><strong>AI Model:</strong></span>
+                            <span>Llama 3.3 70B (Groq)</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span><strong>Embeddings:</strong></span>
+                            <span>Xenova/all-MiniLM-L6-v2 (Local)</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span><strong>OCR:</strong></span>
+                            <span>Mistral OCR</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="topK">Number of Results:</label>
@@ -567,7 +584,6 @@
 
         async function askQuestion() {
             const question = document.getElementById('question').value.trim();
-            const model = document.getElementById('model').value;
             const topK = document.getElementById('topK').value;
             const userId = document.getElementById('userId').value.trim();
             const resultDiv = document.getElementById('queryResult');
@@ -592,7 +608,6 @@
                     },
                     body: JSON.stringify({
                         question,
-                        model,
                         topK: parseInt(topK),
                         userId
                     })

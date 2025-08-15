@@ -13,7 +13,15 @@ router.post('/ingest', async (req, res) => {
   try {
     console.log('📧 Starting email ingest endpoint...');
     
-    const { emails } = req.body;
+    const { emails, userID } = req.body;
+
+    // Validate userID for data isolation
+    if (!userID || typeof userID !== 'string' || userID.trim().length === 0) {
+      return res.status(400).json({
+        error: 'userID is required for email data isolation and must be a non-empty string',
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // Validate request body
     if (!emails || !Array.isArray(emails)) {
@@ -30,7 +38,7 @@ router.post('/ingest', async (req, res) => {
       });
     }
 
-    console.log(`📧 Processing ${emails.length} emails for ingestion...`);
+    console.log(`📧 Processing ${emails.length} emails for ingestion for user: ${userID}...`);
 
     // Process emails in batch
     const batchResult = emailService.processBatchEmails(emails);
@@ -48,8 +56,8 @@ router.post('/ingest', async (req, res) => {
     }
 
     // Add processed emails to vector database
-    console.log(`🔄 Adding ${batchResult.processed.length} emails to vector database...`);
-    const emailIds = await emailVectorService.addEmails(batchResult.processed);
+    console.log(`🔄 Adding ${batchResult.processed.length} emails to vector database for user: ${userID}...`);
+    const emailIds = await emailVectorService.addEmails(batchResult.processed, userID);
 
     console.log(`✅ Successfully ingested ${emailIds.length} emails`);
 
@@ -57,6 +65,7 @@ router.post('/ingest', async (req, res) => {
       success: true,
       message: 'Emails processed and ingested successfully',
       data: {
+        userID: userID,
         totalSubmitted: emails.length,
         totalProcessed: batchResult.processed.length,
         totalErrors: batchResult.errors.length,
@@ -87,11 +96,20 @@ router.post('/query', async (req, res) => {
     
     const { 
       query, 
+      userID,
       topK = 10, 
       filters = {},
       temperature = 0.3,
       useAdvancedSearch = false
     } = req.body;
+
+    // Validate userID for data isolation
+    if (!userID || typeof userID !== 'string' || userID.trim().length === 0) {
+      return res.status(400).json({
+        error: 'userID is required for email data isolation and must be a non-empty string',
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // Validate query
     if (!query || typeof query !== 'string') {
@@ -101,7 +119,7 @@ router.post('/query', async (req, res) => {
       });
     }
 
-    console.log(`🔍 Processing email query: "${query}"`);
+    console.log(`🔍 Processing email query for user ${userID}: "${query}"`);
 
     // Search for relevant emails
     let searchResults;
@@ -112,10 +130,10 @@ router.post('/query', async (req, res) => {
         query,
         topK,
         ...filters
-      });
+      }, userID);
     } else {
       // Use basic semantic search
-      searchResults = await emailVectorService.searchEmails(query, topK, filters);
+      searchResults = await emailVectorService.searchEmails(query, userID, topK, filters);
     }
 
     console.log(`📧 Found ${searchResults.length} relevant emails`);
@@ -162,16 +180,17 @@ router.post('/query', async (req, res) => {
 
     const response = {
       success: true,
-      data: {
-        query,
-        answer: aiResponse.answer,
-        confidence: aiResponse.confidence,
-        emails: emailSummaries,
-        totalEmails: searchResults.length,
-        model: aiResponse.model,
-        tokens: aiResponse.tokens,
-        searchType: useAdvancedSearch ? 'advanced' : 'semantic'
-      },
+              data: {
+          userID,
+          query,
+          answer: aiResponse.answer,
+          confidence: aiResponse.confidence,
+          emails: emailSummaries,
+          totalEmails: searchResults.length,
+          model: aiResponse.model,
+          tokens: aiResponse.tokens,
+          searchType: useAdvancedSearch ? 'advanced' : 'semantic'
+        },
       timestamp: new Date().toISOString()
     };
 
@@ -208,12 +227,21 @@ router.get('/list', async (req, res) => {
     console.log('📧 Listing emails...');
     
     const { 
+      userID,
       sender_email, 
       sender_domain, 
       has_attachments,
       limit = 50,
       offset = 0
     } = req.query;
+
+    // Validate userID for data isolation
+    if (!userID || typeof userID !== 'string' || userID.trim().length === 0) {
+      return res.status(400).json({
+        error: 'userID is required for email data isolation and must be a non-empty string',
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // Build filters
     const filters = {};
@@ -222,7 +250,7 @@ router.get('/list', async (req, res) => {
     if (has_attachments !== undefined) filters.has_attachments = has_attachments === 'true';
 
     // Get emails
-    const allEmails = await emailVectorService.getAllEmails(filters);
+    const allEmails = await emailVectorService.getAllEmails(userID, filters);
     
     // Apply pagination
     const startIndex = parseInt(offset);
@@ -245,16 +273,17 @@ router.get('/list', async (req, res) => {
 
     const response = {
       success: true,
-      data: {
-        emails: formattedEmails,
-        pagination: {
-          total: allEmails.length,
-          limit: parseInt(limit),
-          offset: parseInt(offset),
-          hasMore: endIndex < allEmails.length
+              data: {
+          userID,
+          emails: formattedEmails,
+          pagination: {
+            total: allEmails.length,
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            hasMore: endIndex < allEmails.length
+          },
+          filters: filters
         },
-        filters: filters
-      },
       timestamp: new Date().toISOString()
     };
 
@@ -277,7 +306,14 @@ router.get('/stats', async (req, res) => {
   try {
     console.log('📊 Getting email statistics...');
     
-    const { sender_email, sender_domain } = req.query;
+    const { userID, sender_email, sender_domain } = req.query;
+    
+    if (!userID || typeof userID !== 'string' || userID.trim().length === 0) {
+      return res.status(400).json({
+        error: 'userID is required for email data isolation and must be a non-empty string',
+        timestamp: new Date().toISOString()
+      });
+    }
     
     // Build filters for stats
     const filters = {};
@@ -285,7 +321,7 @@ router.get('/stats', async (req, res) => {
     if (sender_domain) filters.sender_domain = sender_domain;
 
     // Get statistics
-    const stats = await emailVectorService.getEmailStats(filters);
+    const stats = await emailVectorService.getEmailStats(userID, filters);
     
     // Get health status
     const health = await emailVectorService.checkHealth();
@@ -319,6 +355,7 @@ router.get('/stats', async (req, res) => {
 router.delete('/:emailId', async (req, res) => {
   try {
     const { emailId } = req.params;
+    const { userID } = req.query;
 
     if (!emailId) {
       return res.status(400).json({
@@ -327,9 +364,16 @@ router.delete('/:emailId', async (req, res) => {
       });
     }
 
-    console.log(`🗑️ Deleting email: ${emailId}`);
+    if (!userID || typeof userID !== 'string' || userID.trim().length === 0) {
+      return res.status(400).json({
+        error: 'userID is required for email data isolation and must be a non-empty string',
+        timestamp: new Date().toISOString()
+      });
+    }
 
-    const deleted = await emailVectorService.deleteEmail(emailId);
+    console.log(`🗑️ Deleting email: ${emailId} for user: ${userID}`);
+
+    const deleted = await emailVectorService.deleteEmail(emailId, userID);
 
     if (!deleted) {
       return res.status(404).json({
@@ -341,7 +385,7 @@ router.delete('/:emailId', async (req, res) => {
     res.json({
       success: true,
       message: 'Email deleted successfully',
-      data: { emailId },
+      data: { emailId, userID },
       timestamp: new Date().toISOString()
     });
 
@@ -362,7 +406,14 @@ router.post('/delete-batch', async (req, res) => {
   try {
     console.log('🗑️ Starting batch email deletion...');
     
-    const { filters = {} } = req.body;
+    const { filters = {}, userID } = req.body;
+
+    if (!userID || typeof userID !== 'string' || userID.trim().length === 0) {
+      return res.status(400).json({
+        error: 'userID is required for email data isolation and must be a non-empty string',
+        timestamp: new Date().toISOString()
+      });
+    }
 
     if (Object.keys(filters).length === 0) {
       return res.status(400).json({
@@ -372,15 +423,16 @@ router.post('/delete-batch', async (req, res) => {
       });
     }
 
-    console.log('🗑️ Deleting emails with filters:', filters);
+    console.log(`🗑️ Deleting emails with filters for user ${userID}:`, filters);
 
-    const deletedCount = await emailVectorService.deleteEmailsByFilters(filters);
+    const deletedCount = await emailVectorService.deleteEmailsByFilters(userID, filters);
 
     res.json({
       success: true,
       message: `Successfully deleted ${deletedCount} emails`,
       data: { 
         deletedCount,
+        userID,
         filters 
       },
       timestamp: new Date().toISOString()
@@ -403,7 +455,14 @@ router.post('/clear', async (req, res) => {
   try {
     console.log('🧹 Clearing all emails...');
     
-    const { confirm } = req.body;
+    const { confirm, userID } = req.body;
+
+    if (!userID || typeof userID !== 'string' || userID.trim().length === 0) {
+      return res.status(400).json({
+        error: 'userID is required for email data isolation and must be a non-empty string',
+        timestamp: new Date().toISOString()
+      });
+    }
 
     if (confirm !== 'DELETE_ALL_EMAILS') {
       return res.status(400).json({
@@ -412,11 +471,12 @@ router.post('/clear', async (req, res) => {
       });
     }
 
-    await emailVectorService.clearAllEmails();
+    await emailVectorService.clearAllEmails(userID);
 
     res.json({
       success: true,
-      message: 'All emails cleared successfully',
+      message: `All emails cleared successfully for user: ${userID}`,
+      data: { userID },
       timestamp: new Date().toISOString()
     });
 
@@ -470,6 +530,14 @@ router.post('/search', async (req, res) => {
     
     const searchParams = req.body;
 
+    // Validate required userID parameter
+    if (!searchParams.userID || typeof searchParams.userID !== 'string' || searchParams.userID.trim().length === 0) {
+      return res.status(400).json({
+        error: 'userID is required for email data isolation and must be a non-empty string',
+        timestamp: new Date().toISOString()
+      });
+    }
+
     // Validate required query parameter
     if (!searchParams.query) {
       return res.status(400).json({
@@ -478,10 +546,10 @@ router.post('/search', async (req, res) => {
       });
     }
 
-    console.log('🔍 Advanced search parameters:', searchParams);
+    console.log(`🔍 Advanced search parameters for user ${searchParams.userID}:`, searchParams);
 
     // Perform advanced search
-    const results = await emailVectorService.advancedEmailSearch(searchParams);
+    const results = await emailVectorService.advancedEmailSearch(searchParams, searchParams.userID);
 
     // Format results
     const formattedResults = results.map(email => ({

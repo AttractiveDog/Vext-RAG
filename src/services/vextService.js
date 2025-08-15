@@ -1,12 +1,14 @@
 import OpenAI from 'openai';
+import huggingFaceEmbeddingService from './huggingFaceEmbeddingService.js';
 
 class VextService {
   constructor() {
     this.openai = null;
+    this.embeddingProvider = process.env.EMBEDDING_PROVIDER || 'huggingface'; // Default to HuggingFace
   }
 
   /**
-   * Initialize OpenAI client lazily
+   * Initialize OpenAI client lazily (only needed for AI generation, not embeddings)
    */
   _initOpenAI() {
     if (!this.openai) {
@@ -21,15 +23,35 @@ class VextService {
   }
 
   /**
-   * Generate embeddings for text using OpenAI
+   * Generate embeddings for text using the configured embedding provider
    * @param {string|string[]} text - Text or array of texts to embed
    * @returns {Promise<number[][]>} - Array of embedding vectors
    */
   async generateEmbeddings(text) {
     try {
+      if (this.embeddingProvider === 'huggingface') {
+        return await huggingFaceEmbeddingService.generateEmbeddings(text);
+      } else if (this.embeddingProvider === 'openai') {
+        return await this._generateOpenAIEmbeddings(text);
+      } else {
+        throw new Error(`Unsupported embedding provider: ${this.embeddingProvider}`);
+      }
+    } catch (error) {
+      console.error('Error generating embeddings:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate embeddings using OpenAI (legacy method)
+   * @param {string|string[]} text - Text or array of texts to embed
+   * @returns {Promise<number[][]>} - Array of embedding vectors
+   */
+  async _generateOpenAIEmbeddings(text) {
+    try {
       const texts = Array.isArray(text) ? text : [text];
       
-      console.log(`Generating embeddings for ${texts.length} text chunks...`);
+      console.log(`Generating embeddings for ${texts.length} text chunks using OpenAI...`);
       
       const openai = this._initOpenAI();
       
@@ -51,7 +73,7 @@ class VextService {
       console.log(`Successfully generated ${embeddings.length} embeddings`);
       return embeddings;
     } catch (error) {
-      console.error('Error generating embeddings:', error);
+      console.error('Error generating OpenAI embeddings:', error);
       
       // Provide more specific error messages
       if (error.message.includes('timeout')) {
@@ -72,8 +94,12 @@ class VextService {
    * @returns {Promise<number[]>} - Embedding vector
    */
   async embedText(text) {
-    const embeddings = await this.generateEmbeddings([text]);
-    return embeddings[0];
+    if (this.embeddingProvider === 'huggingface') {
+      return await huggingFaceEmbeddingService.embedText(text);
+    } else {
+      const embeddings = await this.generateEmbeddings([text]);
+      return embeddings[0];
+    }
   }
 
   /**
@@ -133,7 +159,7 @@ class VextService {
    */
   async validateService() {
     try {
-      if (!process.env.OPENAI_API_KEY) {
+      if (this.embeddingProvider === 'openai' && !process.env.OPENAI_API_KEY) {
         throw new Error('OPENAI_API_KEY is not configured');
       }
 
@@ -152,11 +178,36 @@ class VextService {
    */
   async getEmbeddingDimensions() {
     try {
-      const testEmbedding = await this.embedText('test');
-      return testEmbedding.length;
+      if (this.embeddingProvider === 'huggingface') {
+        return huggingFaceEmbeddingService.getEmbeddingDimensions();
+      } else {
+        const testEmbedding = await this.embedText('test');
+        return testEmbedding.length;
+      }
     } catch (error) {
       console.error('Error getting embedding dimensions:', error);
-      return 1536; // Default dimension for text-embedding-ada-002
+      if (this.embeddingProvider === 'huggingface') {
+        return 384; // Default dimension for all-MiniLM-L6-v2
+      } else {
+        return 1536; // Default dimension for text-embedding-ada-002
+      }
+    }
+  }
+
+  /**
+   * Get current embedding provider and model information
+   * @returns {Object} - Provider and model info
+   */
+  getEmbeddingInfo() {
+    if (this.embeddingProvider === 'huggingface') {
+      return huggingFaceEmbeddingService.getModelInfo();
+    } else {
+      return {
+        name: 'text-embedding-ada-002',
+        dimensions: 1536,
+        type: 'openai-embedding',
+        provider: 'openai'
+      };
     }
   }
 }

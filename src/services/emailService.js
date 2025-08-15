@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 class EmailService {
   constructor() {
     this.supportedFields = [
+      'userID',
       'email_id',
       'sender_email', 
       'cc_emails',
@@ -31,13 +32,18 @@ class EmailService {
       };
     }
 
-    // Required fields validation
-    const requiredFields = ['email_id', 'sender_email', 'receiver_emails', 'time_received', 'subject'];
+    // Required fields validation - userID is now required for data isolation
+    const requiredFields = ['userID', 'email_id', 'sender_email', 'receiver_emails', 'time_received', 'subject'];
     
     for (const field of requiredFields) {
       if (!emailData[field]) {
         errors.push(`Missing required field: ${field}`);
       }
+    }
+
+    // Validate userID format (should be a non-empty string)
+    if (emailData.userID && (typeof emailData.userID !== 'string' || emailData.userID.trim().length === 0)) {
+      errors.push('userID must be a non-empty string');
     }
 
     // Email format validation
@@ -120,6 +126,7 @@ class EmailService {
 
     // Create processed email object
     const processedEmail = {
+      userID: emailData.userID.trim(), // Add userID for data isolation
       email_id: emailData.email_id,
       sender_email: emailData.sender_email,
       receiver_emails: normalizeEmails(emailData.receiver_emails),
@@ -191,6 +198,9 @@ class EmailService {
    */
   createEmailMetadata(processedEmail) {
     return {
+      // User isolation - primary field for data isolation
+      userID: processedEmail.userID,
+      
       // Email identification
       email_id: processedEmail.email_id,
       document_id: processedEmail.document_id,
@@ -285,12 +295,18 @@ class EmailService {
   /**
    * Create search filters for email queries
    * @param {Object} filters - Filter options
+   * @param {string} userID - User ID for data isolation (required)
    * @returns {Object} - ChromaDB compatible filter
    */
-  createSearchFilters(filters = {}) {
+  createSearchFilters(filters = {}, userID = null) {
     const chromaFilters = {
       document_type: 'email'
     };
+
+    // Add user isolation filter - required for all email queries
+    if (userID) {
+      chromaFilters.userID = userID;
+    }
 
     // Add sender filter
     if (filters.sender_email) {

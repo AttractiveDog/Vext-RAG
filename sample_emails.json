@@ -1,6 +1,7 @@
 {
   "emails": [
     {
+      "userID": "user_123",
       "email_id": "email_001",
       "sender_email": "john.smith@techcorp.com",
       "receiver_emails": ["board@techcorp.com", "investors@techcorp.com"],
@@ -23,6 +24,7 @@
       ]
     },
     {
+      "userID": "user_123",
       "email_id": "email_002",
       "sender_email": "maria.garcia@globalsupplier.com",
       "receiver_emails": ["procurement@techcorp.com"],
@@ -45,6 +47,7 @@
       ]
     },
     {
+      "userID": "user_123",
       "email_id": "email_003",
       "sender_email": "hr@techcorp.com",
       "receiver_emails": ["all@techcorp.com"],
@@ -67,6 +70,7 @@
       ]
     },
     {
+      "userID": "user_456",
       "email_id": "email_004",
       "sender_email": "david.chen@marketingagency.com",
       "receiver_emails": ["marketing@techcorp.com"],
@@ -89,6 +93,7 @@
       ]
     },
     {
+      "userID": "user_456",
       "email_id": "email_005",
       "sender_email": "alex.johnson@property-mgmt.com",
       "receiver_emails": ["facilities@techcorp.com"],
@@ -111,6 +116,7 @@
       ]
     },
     {
+      "userID": "user_789",
       "email_id": "email_006",
       "sender_email": "sarah.williams@techinsurance.com",
       "receiver_emails": ["risk@techcorp.com"],
@@ -133,6 +139,7 @@
       ]
     },
     {
+      "userID": "user_789",
       "email_id": "email_007",
       "sender_email": "mike.taylor@cloudsecurity.com",
       "receiver_emails": ["it@techcorp.com"],
@@ -155,6 +162,7 @@
       ]
     },
     {
+      "userID": "user_123",
       "email_id": "email_008",
       "sender_email": "lisa.brown@lawfirm.com",
       "receiver_emails": ["legal@techcorp.com"],
@@ -177,6 +185,7 @@
       ]
     },
     {
+      "userID": "user_456",
       "email_id": "email_009",
       "sender_email": "robert.davis@datacenter.com",
       "receiver_emails": ["infrastructure@techcorp.com"],
@@ -199,6 +208,7 @@
       ]
     },
     {
+      "userID": "user_789",
       "email_id": "email_010",
       "sender_email": "jennifer.wilson@consultingfirm.com",
       "receiver_emails": ["strategy@techcorp.com"],

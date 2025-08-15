@@ -1,5 +1,167 @@
 [
   {
+    "id": "q_1755268750861_1jsy7qyma",
+    "timestamp": "2025-08-15T14:39:10.861Z",
+    "question": "what are all the important dates in the table?",
+    "answer": "Based on the provided context, I was unable to find a specific table or chart that lists all the important dates. However, I can suggest some possible locations where the important dates might be mentioned.\n\nIn Document 31, there is a table that mentions some dates, but it does not explicitly state that they are important dates. The table is as follows:\n\n|  n | Application Money | \"Not Applicable\"  |\n| --- | --- | --- |\n|  5 | Eligibility Cum Technical Bid Opening Date | 3:30 PM on 27th May, 2022\n|  6 | Commercial Bid | The commercial bids of only those Bidders who qualify in both eligibility and technical evaluation will be opened. The date for opening of the commercial bid would be communicated separately to the technically eligible Bidders.  |\n\nAdditionally, in Document 39, there is a mention of important dates in the context of the RFP process, but it does not provide a comprehensive list of all important dates.\n\nTo find the important dates, I would recommend searching through all the documents, especially those related to the RFP process, such as Documents 1, 2, 3, and 39. It is possible that the important dates are scattered throughout these documents, and a thorough search is necessary to compile a complete list.\n\nIn conclusion, while I was unable to find a specific table or chart that lists all the important dates, I suggest searching through the relevant documents, especially those related to the RFP process, to find the necessary information.",
+    "sources": [
+      {
+        "text": "mpleted financial years -2018-19, 2019-20 and 2020-21* (Not inclusive of the turnover of associate companies). |  | Audited Financial statements for the financial years 2018-19, 2019-20 and 2020-21*. ...",
+        "metadata": {
+          "id": "32e27b74-bde8-4932-82a1-48cb3fe2f0ec_chunk_111",
+          "text": "mpleted financial years -2018-19, 2019-20 and 2020-21* (Not inclusive of the turnover of associate companies). |  | Audited Financial statements for the financial years 2018-19, 2019-20 and 2020-21*. Certified letter from the Chartered Accountant clearly mentioning Turnover, Net Profit and Networth. The CA certificate in this regard should be without any riders or qualification. <br> * If 2020-21 Financial Statements of any bidder is unaudited, then Financial statements for 2017-18, 2018-19 and 2019-20 will be considered, along with and undertaking letter from the bidder that FY 202021 statements are not audited. <br> In this scenario Audited Financial statements for the financial year 201718, 2018-19 and 201920 are to be submitted. |",
+          "similarity": -0.44449589999999994,
+          "chunkIndex": 111,
+          "chunkNumber": 112,
+          "originalFilename": "file-1755268652658-732978376-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "32e27b74-bde8-4932-82a1-48cb3fe2f0ec",
+          "totalScore": -108.95876979999997
+        },
+        "relevance": 0
+      },
+      {
+        "text": "........................ dated ...............................................................\n(hereinafter referred to as \"PO\") for .................................................................\n\n...",
+        "metadata": {
+          "id": "32e27b74-bde8-4932-82a1-48cb3fe2f0ec_chunk_288",
+          "text": "........................ dated ...............................................................\n(hereinafter referred to as \"PO\") for .................................................................\n\nAND WHEREAS, in terms of the conditions as stipulated in the PO and the Request\nfor Proposal document No. .............................................................. Dated .............................................................. for\n..............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................",
+          "similarity": -0.4698568999999999,
+          "chunkIndex": 288,
+          "chunkNumber": 289,
+          "originalFilename": "file-1755268652658-732978376-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "32e27b74-bde8-4932-82a1-48cb3fe2f0ec",
+          "totalScore": -108.95876979999997
+        },
+        "relevance": 0
+      },
+      {
+        "text": "nd qualification to perform the contract.\nc) Failure to answer any questions within stipulated timeline at any stage of this RFP may be considered non-responsive and the proposal may be disqualified.\n...",
+        "metadata": {
+          "id": "32e27b74-bde8-4932-82a1-48cb3fe2f0ec_chunk_187",
+          "text": "nd qualification to perform the contract.\nc) Failure to answer any questions within stipulated timeline at any stage of this RFP may be considered non-responsive and the proposal may be disqualified.\nd) For any ambiguity, omissions or unclear content in the RFP the bidders should request Bank to clarify along with pre-bid queries within the time line mentioned in the \"[A] Important Dates.\ne) For all technical details and relevant standards and specifications of this RFP that may not be stated in detail; bidders should ensure and provide quality and industrial standard products to Bank.\nf) In case of any difference in the standards between this RFP and the bidders' proposal, the higher standards shall prevail and be applicable.\ng) Expenses incurred in the preparation of proposals in response to this RFP are the sole responsibility of the bidders.",
+          "similarity": -0.5243945000000001,
+          "chunkIndex": 187,
+          "chunkNumber": 188,
+          "originalFilename": "file-1755268652658-732978376-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "32e27b74-bde8-4932-82a1-48cb3fe2f0ec",
+          "totalScore": -108.95876979999997
+        },
+        "relevance": 0
+      },
+      {
+        "text": "Executive / SRM)\n7.8 Dashboards shall be exhaustive with details as under:\n7.8.1 Insurer wise\n7.8.2 Product wise\n7.8.3 Zone / Region / Branch / Wealth Executive / SRM\n\n# 8.8.4 Premium / Income wise \n\n...",
+        "metadata": {
+          "id": "32e27b74-bde8-4932-82a1-48cb3fe2f0ec_chunk_214",
+          "text": "Executive / SRM)\n7.8 Dashboards shall be exhaustive with details as under:\n7.8.1 Insurer wise\n7.8.2 Product wise\n7.8.3 Zone / Region / Branch / Wealth Executive / SRM\n\n# 8.8.4 Premium / Income wise \n\n7.8.5 Campaign Dashboards\n7.8.6 Data analytics\n7.9 Generation of reports with option to categorize customer's basis predefined rules.\n7.10 Business \\& Commission reconciliation reports.\n7.11 Transaction report by payment methods, success rates channel wise.\n7.12 Employee (SP) performance report for sales assistance platform\n7.13 Customer retention report by month and product.\n7.14 Conversion report by lead source, product. Assisted vs unassisted sales.\n7.15 Drop rates report by product. Third part analytics tools to be used (e.g. Google Analytics)",
+          "similarity": -0.5299016000000001,
+          "chunkIndex": 214,
+          "chunkNumber": 215,
+          "originalFilename": "file-1755268652658-732978376-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "32e27b74-bde8-4932-82a1-48cb3fe2f0ec",
+          "totalScore": -108.95876979999997
+        },
+        "relevance": 0
+      },
+      {
+        "text": "for the financial years 2018-19, 2019-20 and 2020-21*. Certified letter from the |\n\n| S. No | Eligibility Criteria | Complied (Yes/No) | Supporting Documents Required |\n| :--: | :--: | :--: | :--: |\n|...",
+        "metadata": {
+          "id": "32e27b74-bde8-4932-82a1-48cb3fe2f0ec_chunk_113",
+          "text": "for the financial years 2018-19, 2019-20 and 2020-21*. Certified letter from the |\n\n| S. No | Eligibility Criteria | Complied (Yes/No) | Supporting Documents Required |\n| :--: | :--: | :--: | :--: |\n|  | The net worth of the bidder should be positive as on RFP date and should not have eroded by more than $30 \\%$ in the last three years. <br> * If 2020-21 Financial Statements of any bidder is unaudited, then Financial statements for 2017-18, 2018-19 and 2019-20 will be considered, along with an undertaking letter from the bidder that FY 2020-21 statements are not audited. <br> In this scenario Audited Financial statements for the financial year 2017-18, 2018-19 and 2019-20 are to be submitted. |  | Chartered Accountant clearly mentioning Turnover, Net Profit and Networth. The CA certificate in this regard should be without any riders or qualification. |\n| C | Experience \\& Support Infrastructure |  |  |",
+          "similarity": -0.5311545,
+          "chunkIndex": 113,
+          "chunkNumber": 114,
+          "originalFilename": "file-1755268652658-732978376-rfp-document-digital-insurance-solution-30-07 (1).pdf",
+          "documentId": "32e27b74-bde8-4932-82a1-48cb3fe2f0ec",
+          "totalScore": -108.95876979999997
+        },
+        "relevance": 0
+      }
+    ],
+    "confidence": 1,
+    "model": "llama-3.3-70b-versatile",
+    "tokens": 80501
+  },
+  {
+    "id": "q_1755268622479_jchyf7rdx",
+    "timestamp": "2025-08-15T14:37:02.479Z",
+    "question": "what is the second misson",
+    "answer": "The second mission is mentioned in several documents, but the most relevant information can be found in Document 6 and Document 13.\n\nAccording to Document 6, the second mission is related to the \"Digital Skeptic\". It states that \"Mission 2 (Digital Skeptic): The analysis pinpoints subtle biases, the 'red flags' are insightful, and the verification questions are sharp and actionable.\" (Document 6).\n\nDocument 13 provides more context about the Digital Skeptic mission. It explains that the goal is to perform a \"skeptical analysis\" of a news article, highlighting claims, analyzing language, and arming the reader with questions to ask. The program should produce a \"Critical Analysis Report\" in Markdown format, containing sections such as \"Core Claims\", \"Language & Tone Analysis\", \"Potential Red Flags\", and \"Verification Questions\" (Document 13).\n\nIn summary, the second mission, also known as the Digital Skeptic, involves analyzing a news article to identify potential biases, red flags, and claims, and providing a critical analysis report to help readers evaluate the article's credibility. (Document 6, Document 13)",
+    "sources": [
+      {
+        "text": "ovides minimal, unhelpful information.\n- Needs Improvement (0-7 pts): The code is exceptionally difficult to read. No documentation is provided.\n\n# 4. Innovation \\& \"Stand Out\" Features (10 Points) \n\n...",
+        "metadata": {
+          "id": "8e33ef49-df49-407e-9df7-0d350bc38f1e_chunk_19",
+          "text": "ovides minimal, unhelpful information.\n- Needs Improvement (0-7 pts): The code is exceptionally difficult to read. No documentation is provided.\n\n# 4. Innovation \\& \"Stand Out\" Features (10 Points) \n\nThis category rewards participants who went above and beyond the core requirements.\n\n- Excellent (8-10 pts): The participant successfully implemented one or more of the suggested \"Stand Out\" features in a meaningful way. The solution shows exceptional creativity or a clever technical approach that adds significant value.\n- Good (5-7 pts): An attempt was made to implement a bonus feature, but it may be partially functional or not fully integrated into the final output.\n- Satisfactory (1-4 pts): The participant met the base requirements only. No attempt was made at bonus features.\n- Needs Improvement (0 pts): Not applicable if the core requirements were not met.",
+          "similarity": -0.6525388000000001,
+          "chunkIndex": 19,
+          "chunkNumber": 20,
+          "originalFilename": "file-1755266526033-829044154-Hackathon problem statements final.pdf",
+          "documentId": "8e33ef49-df49-407e-9df7-0d350bc38f1e",
+          "totalScore": -12.6900206
+        },
+        "relevance": 0
+      },
+      {
+        "text": "factually incorrect, or completely fails to address the prompt's requirements.\n\n\n# 3. Code Quality \\& Documentation (20 Points) \n\nThis category assesses standard software engineering best practices.\n\n...",
+        "metadata": {
+          "id": "8e33ef49-df49-407e-9df7-0d350bc38f1e_chunk_18",
+          "text": "factually incorrect, or completely fails to address the prompt's requirements.\n\n\n# 3. Code Quality \\& Documentation (20 Points) \n\nThis category assesses standard software engineering best practices.\n\n- Excellent (17-20 pts): The code is clean, well-commented, and easy to understand. Variables and functions have clear, logical names. The README .md is professional, providing a clear explanation of the approach and flawless instructions to run the code.\n- Good (13-16 pts): The code is functional and readable but could be better organized. Comments may be sparse. The README.md has instructions, but they might be slightly unclear or miss a step.\n- Satisfactory (8-12 pts): The code is messy, hard to follow, and lacks comments. The README.md is missing or provides minimal, unhelpful information.\n- Needs Improvement (0-7 pts): The code is exceptionally difficult to read. No documentation is provided.\n\n# 4. Innovation \\& \"Stand Out\" Features (10 Points)",
+          "similarity": -0.7253331999999999,
+          "chunkIndex": 18,
+          "chunkNumber": 19,
+          "originalFilename": "file-1755266526033-829044154-Hackathon problem statements final.pdf",
+          "documentId": "8e33ef49-df49-407e-9df7-0d350bc38f1e",
+          "totalScore": -12.6900206
+        },
+        "relevance": 0
+      },
+      {
+        "text": "s to add creative or exceptionally valuable features?  |\n\n# Detailed Scoring Rubric \n\n## 1. Functionality \\& Correctness (25 Points)\n\nThis category assesses the fundamental execution of the project.\n\n...",
+        "metadata": {
+          "id": "8e33ef49-df49-407e-9df7-0d350bc38f1e_chunk_13",
+          "text": "s to add creative or exceptionally valuable features?  |\n\n# Detailed Scoring Rubric \n\n## 1. Functionality \\& Correctness (25 Points)\n\nThis category assesses the fundamental execution of the project.\n\n- Excellent (21-25 pts): The program runs flawlessly on the first try with the provided examples. It correctly handles all specified inputs and produces output in the exact format required (Markdown, JSON, etc.). No manual intervention is needed.\n- Good (16-20 pts): The program runs but may have minor, easily fixable issues (e.g., a wrong file path). The output format is mostly correct but may have small deviations. The core logic is sound.\n- Satisfactory (10-15 pts): The program runs after some debugging. It processes the input but the output format is incorrect or incomplete. Key parts of the required output are missing.\n- Needs Improvement (0-9 pts): The program fails to run, crashes, or does not produce any meaningful output. The core requirements are not met.",
+          "similarity": -0.7812636,
+          "chunkIndex": 13,
+          "chunkNumber": 14,
+          "originalFilename": "file-1755266526033-829044154-Hackathon problem statements final.pdf",
+          "documentId": "8e33ef49-df49-407e-9df7-0d350bc38f1e",
+          "totalScore": -12.6900206
+        },
+        "relevance": 0
+      },
+      {
+        "text": "er version of the original; the \"why\" is missing or incorrect.\n- Mission 2 (Digital Skeptic): The claims are just extracted sentences; the red flags are generic (e.g., \"the article could be biased\").\n...",
+        "metadata": {
+          "id": "8e33ef49-df49-407e-9df7-0d350bc38f1e_chunk_17",
+          "text": "er version of the original; the \"why\" is missing or incorrect.\n- Mission 2 (Digital Skeptic): The claims are just extracted sentences; the red flags are generic (e.g., \"the article could be biased\").\n- Mission 3 (Fashion Critic): The output is a generic description of the clothes rather than a critique (e.g., \"The person is wearing a blazer and pants.\").\n- Needs Improvement (0-19 pts): The Al output is irrelevant, nonsensical, factually incorrect, or completely fails to address the prompt's requirements.\n\n\n# 3. Code Quality \\& Documentation (20 Points) \n\nThis category assesses standard software engineering best practices.",
+          "similarity": -0.7970927999999999,
+          "chunkIndex": 17,
+          "chunkNumber": 18,
+          "originalFilename": "file-1755266526033-829044154-Hackathon problem statements final.pdf",
+          "documentId": "8e33ef49-df49-407e-9df7-0d350bc38f1e",
+          "totalScore": -12.6900206
+        },
+        "relevance": 0
+      },
+      {
+        "text": "comparison '== True' is redundant.\"\n]\n}\n\n- Required Output: Your program must produce a single, well-formatted Markdown report. For each original comment, you must generate a section that includes:\n\n1...",
+        "metadata": {
+          "id": "8e33ef49-df49-407e-9df7-0d350bc38f1e_chunk_3",
+          "text": "comparison '== True' is redundant.\"\n]\n}\n\n- Required Output: Your program must produce a single, well-formatted Markdown report. For each original comment, you must generate a section that includes:\n\n1. Positive Rephrasing: A gentle and encouraging version of the feedback.\n2. The 'Why': A clear, concise explanation of the underlying software principle (e.g., performance, readability, convention).\n3. Suggested Improvement: A concrete code example demonstrating the recommended fix.\n\n```\nExample structure for one part of the output:--\n\\#\\#\\# Analysis of Comment: \"This is inefficient. Don't loop twice conceptually.\"\n* **Positive Rephrasing:** \"Great start on the logic here! For better\nperformance, especially with large user lists, we can make this more efficient\nby combining the checks.\"\n* **The 'Why':** Iterating through a list and performing checks can become slow\nas the list grows. By using more direct methods like list comprehensions, we",
+          "similarity": -0.8148896999999999,
+          "chunkIndex": 3,
+          "chunkNumber": 4,
+          "originalFilename": "file-1755266526033-829044154-Hackathon problem statements final.pdf",
+          "documentId": "8e33ef49-df49-407e-9df7-0d350bc38f1e",
+          "totalScore": -12.6900206
+        },
+        "relevance": 0
+      }
+    ],
+    "confidence": 1,
+    "model": "llama-3.3-70b-versatile",
+    "tokens": 8065
+  },
+  {
     "id": "q_1754855417477_8qncf44rv",
     "timestamp": "2025-08-10T19:50:17.477Z",
     "question": "give me all the dates from the document and show them in table",

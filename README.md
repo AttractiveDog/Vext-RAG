@@ -5,7 +5,7 @@ A powerful Retrieval-Augmented Generation (RAG) system built with Vext for intel
 ## Features
 
 - **Document Ingestion**: Support for PDF, DOCX, TXT, and HTML files
-- **Vector Embeddings**: Using OpenAI for high-quality text embeddings
+- **Vector Embeddings**: Using Hugging Face's all-MiniLM-L6-v2 for local, high-quality text embeddings (384D)
 - **Semantic Search**: Advanced retrieval using vector similarity
 - **Question Answering**: AI-powered responses with context from retrieved documents
 - **RESTful API**: Easy integration with web applications
@@ -18,14 +18,14 @@ A powerful Retrieval-Augmented Generation (RAG) system built with Vext for intel
 
 - **Node.js 18+** - Required for running the application
 - **Docker** (optional) - For running ChromaDB vector database
-- **OpenAI API Key** - Required for text embeddings and generation
+- **OpenAI API Key** - Optional, only required if using OpenAI embeddings or for AI generation
 - **ChromaDB** - Vector database (can be run locally or via Docker)
 
 ## Architecture
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Document      │    │   OpenAI        │    │   Vector        │
+│   Document      │    │   HuggingFace   │    │   Vector        │
 │   Ingestion     │───▶│   Embeddings    │───▶│   Database      │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │

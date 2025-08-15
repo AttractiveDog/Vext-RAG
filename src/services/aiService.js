@@ -1,23 +1,23 @@
-import OpenAI from 'openai';
+import Groq from 'groq-sdk';
 
 class AIService {
   constructor() {
-    this.openai = null;
+    this.groq = null;
   }
 
   /**
-   * Initialize OpenAI client lazily
+   * Initialize Groq client lazily
    */
-  _initOpenAI() {
-    if (!this.openai) {
-      if (!process.env.OPENAI_API_KEY) {
-        throw new Error('OPENAI_API_KEY environment variable is missing or empty');
+  _initGroq() {
+    if (!this.groq) {
+      if (!process.env.GROQ_API_KEY) {
+        throw new Error('GROQ_API_KEY environment variable is missing or empty');
       }
-      this.openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY
+      this.groq = new Groq({
+        apiKey: process.env.GROQ_API_KEY
       });
     }
-    return this.openai;
+    return this.groq;
   }
 
   /**
@@ -58,12 +58,13 @@ class AIService {
         this.getStructuredDataUserPrompt(question) :
         this.getStandardUserPrompt(question);
 
-      // Generate response using OpenAI with retry logic for rate limits
-      const openai = this._initOpenAI();
+      // Generate response using Groq with retry logic for rate limits
+      const groq = this._initGroq();
+      const model = process.env.AI_MODEL || 'llama-3.3-70b-versatile';
       
-      const response = await this.makeOpenAIRequestWithRetry(() => 
-        openai.chat.completions.create({
-          model: 'gpt-4o-mini',
+      const response = await this.makeGroqRequestWithRetry(() => 
+        groq.chat.completions.create({
+          model: model,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
@@ -93,7 +94,7 @@ class AIService {
         answer,
         sources,
         confidence,
-        model: 'gpt-4o-mini',
+        model: model,
         tokens: response.usage?.total_tokens || 0,
         contextTruncated: truncatedContext.wasTruncated,
         documentsUsed: truncatedContext.documents.length,
@@ -154,7 +155,7 @@ Answer:`;
 
       const openai = this._initOpenAI();
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'user', content: systemPrompt }
         ],
@@ -172,7 +173,7 @@ Answer:`;
           relevance: mostRelevantDoc.distance || 0
         }],
         confidence: 0.3, // Lower confidence due to minimal context
-        model: 'gpt-4o-mini',
+        model: 'llama-3.3-70b-versatile',
         tokens: response.usage?.total_tokens || 0,
         contextTruncated: true,
         documentsUsed: 1,
@@ -196,8 +197,8 @@ Answer:`;
     // Estimate tokens (rough approximation: 1 token ≈ 4 characters)
     const estimateTokens = (text) => Math.ceil(text.length / 4);
     
-    // Get model context limits - hardcoded to gpt-4o-mini
-    const model = 'gpt-4o-mini';
+    // Get model context limits - use configured model
+    const model = process.env.AI_MODEL || 'llama-3.3-70b-versatile';
     const modelContextLimit = this.getModelContextLimit(model);
     
     // Reserve tokens for the prompt structure, question, and response
@@ -454,26 +455,31 @@ For pricing questions: If the exact product name isn't found but you see pricing
    */
   getModelContextLimit(model) {
     const limits = {
+      // Groq models
+      'llama-3.3-70b-versatile': 131072,
+      'llama-3.1-8b-instant': 131072,
+      'mixtral-8x7b-32768': 32768,
+      'gemma2-9b-it': 8192,
+      // Legacy OpenAI models (if needed)
       'gpt-3.5-turbo': 16385,
       'gpt-3.5-turbo-16k': 16385,
       'gpt-4': 8192,
       'gpt-4-32k': 32768,
       'gpt-4o': 128000,
-      'gpt-4o-mini': 128000,
       'gpt-4-turbo': 128000,
       'gpt-4-turbo-preview': 128000
     };
     
-    return limits[model] || 16385; // Default to GPT-3.5-turbo limit
+    return limits[model] || 131072; // Default to Llama 3.1 limit
   }
 
   /**
-   * Make OpenAI request with retry logic for rate limits
-   * @param {Function} requestFn - Function that makes the OpenAI request
+   * Make Groq request with retry logic for rate limits
+   * @param {Function} requestFn - Function that makes the Groq request
    * @param {number} maxRetries - Maximum number of retries
-   * @returns {Promise} - OpenAI response
+   * @returns {Promise} - Groq response
    */
-  async makeOpenAIRequestWithRetry(requestFn, maxRetries = 2) {
+  async makeGroqRequestWithRetry(requestFn, maxRetries = 2) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await requestFn();
@@ -515,7 +521,7 @@ For pricing questions: If the exact product name isn't found but you see pricing
 
       const openai = this._initOpenAI();
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'user', content: prompt }
         ],
@@ -556,7 +562,7 @@ For pricing questions: If the exact product name isn't found but you see pricing
 
       const openai = this._initOpenAI();
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'user', content: prompt }
         ],
@@ -578,14 +584,15 @@ For pricing questions: If the exact product name isn't found but you see pricing
    */
   async validateService() {
     try {
-      if (!process.env.OPENAI_API_KEY) {
-        throw new Error('OPENAI_API_KEY is not configured');
+      if (!process.env.GROQ_API_KEY) {
+        throw new Error('GROQ_API_KEY is not configured');
       }
 
       // Test with a simple completion
-      const openai = this._initOpenAI();
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+      const groq = this._initGroq();
+      const model = process.env.AI_MODEL || 'llama-3.3-70b-versatile';
+      const response = await groq.chat.completions.create({
+        model: model,
         messages: [{ role: 'user', content: 'Hello' }],
         max_tokens: 5
       });
@@ -603,14 +610,17 @@ For pricing questions: If the exact product name isn't found but you see pricing
    */
   async getAvailableModels() {
     try {
-      const openai = this._initOpenAI();
-      const models = await openai.models.list();
-      return models.data
-        .filter(model => model.id.includes('gpt'))
-        .map(model => model.id);
+      const groq = this._initGroq();
+      const models = await groq.models.list();
+      return models.data.map(model => model.id);
     } catch (error) {
       console.error('Error getting available models:', error);
-      return ['gpt-4o-mini', 'gpt-4', 'gpt-4-turbo-preview'];
+      return [
+        'llama-3.3-70b-versatile',
+        'llama-3.1-8b-instant', 
+        'mixtral-8x7b-32768',
+        'gemma2-9b-it'
+      ];
     }
   }
 }

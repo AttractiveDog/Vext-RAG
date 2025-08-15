@@ -360,6 +360,11 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="userID">User ID (Required for Data Isolation)</label>
+                    <input type="text" id="userID" class="form-control" placeholder="e.g., user_123, alice@company.com" value="user_test_123">
+                </div>
+
+                <div class="form-group">
                     <label for="emailData">Email Data (JSON Array)</label>
                     <textarea id="emailData" class="form-control" rows="15" placeholder="Paste your email JSON data here..."></textarea>
                 </div>
@@ -378,6 +383,11 @@
             <div id="query" class="tab-pane">
                 <h2>🔍 Query Emails</h2>
                 <p>Ask natural language questions about your emails using AI.</p>
+
+                <div class="form-group">
+                    <label for="queryUserID">User ID (Required for Data Isolation)</label>
+                    <input type="text" id="queryUserID" class="form-control" placeholder="e.g., user_123, alice@company.com" value="user_test_123">
+                </div>
 
                 <div class="form-group">
                     <label for="queryText">Your Question</label>
@@ -413,6 +423,11 @@
             <div id="list" class="tab-pane">
                 <h2>📋 Email List</h2>
                 <p>Browse all emails with filtering and pagination.</p>
+
+                <div class="form-group">
+                    <label for="listUserID">User ID (Required for Data Isolation)</label>
+                    <input type="text" id="listUserID" class="form-control" placeholder="e.g., user_123, alice@company.com" value="user_test_123">
+                </div>
 
                 <div class="grid">
                     <div class="form-group">
@@ -454,6 +469,11 @@
                 <h2>📊 Email Statistics</h2>
                 <p>View statistics about your email collection.</p>
 
+                <div class="form-group">
+                    <label for="statsUserID">User ID (Required for Data Isolation)</label>
+                    <input type="text" id="statsUserID" class="form-control" placeholder="e.g., user_123, alice@company.com" value="user_test_123">
+                </div>
+
                 <button class="btn" onclick="getStats()">📊 Get Statistics</button>
                 <button class="btn btn-success" onclick="checkHealth()">🏥 Health Check</button>
 
@@ -488,6 +508,11 @@
             <div id="search" class="tab-pane">
                 <h2>🔎 Advanced Email Search</h2>
                 <p>Search emails with multiple criteria and filters.</p>
+
+                <div class="form-group">
+                    <label for="searchUserID">User ID (Required for Data Isolation)</label>
+                    <input type="text" id="searchUserID" class="form-control" placeholder="e.g., user_123, alice@company.com" value="user_test_123">
+                </div>
 
                 <div class="form-group">
                     <label for="searchQuery">Search Query</label>
@@ -546,6 +571,11 @@
                 <p>Delete emails and manage your email collection.</p>
 
                 <div class="form-group">
+                    <label for="manageUserID">User ID (Required for Data Isolation)</label>
+                    <input type="text" id="manageUserID" class="form-control" placeholder="e.g., user_123, alice@company.com" value="user_test_123">
+                </div>
+
+                <div class="form-group">
                     <label for="deleteEmailId">Delete Specific Email by ID</label>
                     <input type="text" id="deleteEmailId" class="form-control" placeholder="email_001">
                 </div>
@@ -590,6 +620,7 @@
         // Sample email data
         const sampleEmailsData = [
             {
+                userID: "user_test_123",
                 email_id: "email_001",
                 sender_email: "john.doe@company.com",
                 receiver_emails: ["jane.smith@company.com", "team@company.com"],
@@ -607,6 +638,7 @@
                 ]
             },
             {
+                userID: "user_test_123",
                 email_id: "email_002",
                 sender_email: "sarah.wilson@vendor.com",
                 receiver_emails: ["procurement@company.com"],
@@ -624,6 +656,7 @@
                 ]
             },
             {
+                userID: "user_test_123",
                 email_id: "email_003",
                 sender_email: "hr@company.com",
                 receiver_emails: ["all@company.com"],
@@ -720,6 +753,12 @@
 
         async function ingestEmails() {
             const emailData = document.getElementById('emailData').value;
+            const userID = document.getElementById('userID').value;
+            
+            if (!userID.trim()) {
+                alert('Please enter a User ID for data isolation.');
+                return;
+            }
             
             if (!emailData.trim()) {
                 alert('Please enter email data or load sample data first.');
@@ -731,7 +770,7 @@
                 
                 const result = await makeRequest(`${API_BASE}/ingest`, {
                     method: 'POST',
-                    body: JSON.stringify({ emails })
+                    body: JSON.stringify({ emails, userID })
                 });
                 
                 showResult('ingestResult', 'ingestContent', result.data, result.success);
@@ -753,9 +792,15 @@
 
         async function queryEmails() {
             const query = document.getElementById('queryText').value;
+            const userID = document.getElementById('queryUserID').value;
             const topK = parseInt(document.getElementById('topK').value);
             const temperature = parseFloat(document.getElementById('temperature').value);
             const senderFilter = document.getElementById('senderFilter').value;
+            
+            if (!userID.trim()) {
+                alert('Please enter a User ID for data isolation.');
+                return;
+            }
             
             if (!query.trim()) {
                 alert('Please enter a question.');
@@ -764,6 +809,7 @@
             
             const requestBody = {
                 query,
+                userID,
                 topK,
                 temperature
             };
@@ -793,12 +839,19 @@
         }
 
         async function listEmails() {
+            const userID = document.getElementById('listUserID').value;
             const sender = document.getElementById('listSender').value;
             const domain = document.getElementById('listDomain').value;
             const limit = document.getElementById('listLimit').value;
             const attachments = document.getElementById('hasAttachments').value;
             
+            if (!userID.trim()) {
+                alert('Please enter a User ID for data isolation.');
+                return;
+            }
+            
             const params = new URLSearchParams();
+            params.append('userID', userID);
             if (sender) params.append('sender_email', sender);
             if (domain) params.append('sender_domain', domain);
             if (limit) params.append('limit', limit);
@@ -837,7 +890,14 @@
         }
 
         async function getStats() {
-            const result = await makeRequest(`${API_BASE}/stats`);
+            const userID = document.getElementById('statsUserID').value;
+            
+            if (!userID.trim()) {
+                alert('Please enter a User ID for data isolation.');
+                return;
+            }
+            
+            const result = await makeRequest(`${API_BASE}/stats?userID=${encodeURIComponent(userID)}`);
             
             if (result.success) {
                 const stats = result.data.data;
@@ -873,6 +933,12 @@
 
         async function advancedSearch() {
             const query = document.getElementById('searchQuery').value;
+            const userID = document.getElementById('searchUserID').value;
+            
+            if (!userID.trim()) {
+                alert('Please enter a User ID for data isolation.');
+                return;
+            }
             
             if (!query.trim()) {
                 alert('Please enter a search query.');
@@ -881,6 +947,7 @@
             
             const searchParams = {
                 query,
+                userID,
                 topK: 10
             };
             
@@ -937,6 +1004,12 @@
 
         async function deleteEmail() {
             const emailId = document.getElementById('deleteEmailId').value;
+            const userID = document.getElementById('manageUserID').value;
+            
+            if (!userID.trim()) {
+                alert('Please enter a User ID for data isolation.');
+                return;
+            }
             
             if (!emailId.trim()) {
                 alert('Please enter an email ID.');
@@ -947,7 +1020,7 @@
                 return;
             }
             
-            const result = await makeRequest(`${API_BASE}/${emailId}`, {
+            const result = await makeRequest(`${API_BASE}/${emailId}?userID=${encodeURIComponent(userID)}`, {
                 method: 'DELETE'
             });
             
@@ -962,8 +1035,14 @@
         }
 
         async function batchDeleteEmails() {
+            const userID = document.getElementById('manageUserID').value;
             const sender = document.getElementById('batchDeleteSender').value;
             const domain = document.getElementById('batchDeleteDomain').value;
+            
+            if (!userID.trim()) {
+                alert('Please enter a User ID for data isolation.');
+                return;
+            }
             
             if (!sender && !domain) {
                 alert('Please specify either a sender email or domain for batch deletion.');
@@ -982,7 +1061,7 @@
             
             const result = await makeRequest(`${API_BASE}/delete-batch`, {
                 method: 'POST',
-                body: JSON.stringify({ filters })
+                body: JSON.stringify({ filters, userID })
             });
             
             showResult('manageResult', 'manageContent', result.data, result.success);
@@ -997,20 +1076,26 @@
         }
 
         async function clearAllEmails() {
+            const userID = document.getElementById('manageUserID').value;
             const confirmation = document.getElementById('confirmClear').value;
+            
+            if (!userID.trim()) {
+                alert('Please enter a User ID for data isolation.');
+                return;
+            }
             
             if (confirmation !== 'DELETE_ALL_EMAILS') {
                 alert('Please type "DELETE_ALL_EMAILS" to confirm deletion of all emails.');
                 return;
             }
             
-            if (!confirm('⚠️ This will permanently delete ALL emails! Are you absolutely sure?')) {
+            if (!confirm('⚠️ This will permanently delete ALL emails for this user! Are you absolutely sure?')) {
                 return;
             }
             
             const result = await makeRequest(`${API_BASE}/clear`, {
                 method: 'POST',
-                body: JSON.stringify({ confirm: 'DELETE_ALL_EMAILS' })
+                body: JSON.stringify({ confirm: 'DELETE_ALL_EMAILS', userID })
             });
             
             showResult('manageResult', 'manageContent', result.data, result.success);

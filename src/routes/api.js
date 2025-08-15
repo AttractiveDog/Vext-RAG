@@ -613,7 +613,7 @@ router.post('/summarize', async (req, res) => {
       data: {
         summary,
         documentCount: documents.length,
-        model: 'gpt-4o-mini'
+        model: 'llama-3.1-70b-versatile'
       },
       timestamp: new Date().toISOString()
     });
@@ -660,7 +660,7 @@ router.post('/topics', async (req, res) => {
       data: {
         topics,
         documentCount: documents.length,
-        model: 'gpt-4o-mini'
+        model: 'llama-3.1-70b-versatile'
       },
       timestamp: new Date().toISOString()
     });
@@ -712,7 +712,7 @@ router.get('/stats', async (req, res) => {
           ai: aiValid
         },
         supportedFormats: documentProcessor.getSupportedFormats(),
-        model: 'gpt-4o-mini'
+        model: 'llama-3.1-70b-versatile'
       },
       timestamp: new Date().toISOString()
     });

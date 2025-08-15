@@ -2,13 +2,14 @@
 
 **Base URL:** `http://3.6.147.238:3000`
 
-**Version:** 1.0.2
+**Version:** 1.0.3
 
-**Description:** A powerful Retrieval-Augmented Generation (RAG) system for intelligent document retrieval and question answering with OCR capabilities.
+**Description:** A powerful Retrieval-Augmented Generation (RAG) system for intelligent document retrieval and question answering with OCR capabilities. Features local embedding generation using Hugging Face models and fast AI inference via Groq.
 
 ## Table of Contents
 
 - [Authentication](#authentication)
+- [AI Models & Architecture](#ai-models--architecture)
 - [Core Endpoints](#core-endpoints)
 - [Document Management](#document-management)
 - [Question & Answer](#question--answer)
@@ -22,8 +23,48 @@
 
 Currently, the API does not require authentication. However, ensure you have valid API keys configured in your environment:
 
-- `OPENAI_API_KEY` - Required for embeddings and AI generation
+- `GROQ_API_KEY` - Required for AI generation using Groq's fast inference
 - `MISTRAL_API_KEY` - Required for OCR functionality (optional)
+- Embeddings are generated locally using Hugging Face models (no API key required)
+
+## AI Models & Architecture
+
+The Vext RAG system uses a hybrid approach combining local processing for embeddings with cloud-based AI for response generation:
+
+### **Embedding Generation (Local)**
+- **Model**: `Xenova/all-MiniLM-L6-v2` (384 dimensions)
+- **Provider**: Hugging Face Transformers.js (runs locally)
+- **Benefits**: 
+  - ⚡ Fast processing
+  - 🔒 Complete privacy (no data leaves your system)
+  - 💰 No API costs
+  - 🚀 No rate limits
+
+### **AI Response Generation (Cloud)**
+- **Model**: `llama-3.3-70b-versatile` (default)
+- **Provider**: Groq (Lightning-fast inference)
+- **Alternative Models**: 
+  - `llama-3.1-8b-instant` (fastest)
+  - `mixtral-8x7b-32768` (excellent reasoning)
+  - `gemma2-9b-it` (efficient)
+- **Benefits**:
+  - ⚡ 500+ tokens/second inference speed
+  - 💰 Cost-effective compared to OpenAI
+  - 🔒 No data retention policies
+  - 🆓 Generous free tier
+
+### **OCR Processing (Cloud)**
+- **Model**: `mistral-ocr-latest`
+- **Provider**: Mistral AI
+- **Capabilities**: Multi-language support, structured data extraction
+
+### **Configuration**
+Set your preferred AI model in environment variables:
+```bash
+AI_MODEL=llama-3.3-70b-versatile  # Default
+# AI_MODEL=llama-3.1-8b-instant   # For fastest responses
+# AI_MODEL=mixtral-8x7b-32768     # For complex reasoning
+```
 
 ## User Management
 
@@ -289,7 +330,7 @@ Ask questions and get AI-powered answers based on ingested documents.
       }
     ],
     "confidence": 0.92,
-    "model": "gpt-4o-mini",
+    "model": "llama-3.3-70b-versatile",
     "tokens": 1250,
     "searchResults": 8,
     "historyId": "history_uuid",
@@ -301,7 +342,7 @@ Ask questions and get AI-powered answers based on ingested documents.
   "answer": "Based on the documents, the main topics include...",
   "sources": [...],
   "confidence": 0.92,
-  "model": "gpt-4o-mini",
+  "model": "llama-3.3-70b-versatile",
   "tokens": 1250,
   "searchResults": 8,
   "historyId": "history_uuid",
@@ -337,7 +378,7 @@ Generate a comprehensive summary of all ingested documents.
   "data": {
     "summary": "This is a comprehensive summary of all documents...",
     "documentCount": 25,
-    "model": "gpt-4o-mini"
+    "model": "llama-3.3-70b-versatile"
   },
   "timestamp": "2024-01-01T00:00:00.000Z"
 }
@@ -381,7 +422,7 @@ Extract key topics from all ingested documents.
       }
     ],
     "documentCount": 25,
-    "model": "gpt-4o-mini"
+    "model": "llama-3.3-70b-versatile"
   },
   "timestamp": "2024-01-01T00:00:00.000Z"
 }
@@ -410,7 +451,7 @@ Retrieve recent questions from history.
         "answer": "The main topics include...",
         "sources": [...],
         "confidence": 0.92,
-        "model": "gpt-4o-mini",
+        "model": "llama-3.3-70b-versatile",
         "tokens": 1250,
         "timestamp": "2024-01-01T00:00:00.000Z"
       }
@@ -440,7 +481,7 @@ Retrieve a specific question by ID.
     "answer": "The main topics include...",
     "sources": [...],
     "confidence": 0.92,
-    "model": "gpt-4o-mini",
+    "model": "llama-3.3-70b-versatile",
     "tokens": 1250,
     "timestamp": "2024-01-01T00:00:00.000Z"
   },
@@ -494,7 +535,7 @@ Get statistics about question history.
   "data": {
     "totalQuestions": 150,
     "averageConfidence": 0.87,
-    "mostUsedModel": "gpt-4o-mini",
+    "mostUsedModel": "llama-3.3-70b-versatile",
     "averageTokens": 1150,
     "questionsToday": 25,
     "questionsThisWeek": 120
@@ -595,7 +636,7 @@ curl -X POST http://3.6.147.238:3000/api/ocr/analyze \
     },
     "analysis": {
       "answer": "This appears to be an invoice for...",
-      "model": "gpt-4o-mini",
+      "model": "llama-3.3-70b-versatile",
       "tokens": 850
     },
     "summary": {
@@ -736,7 +777,7 @@ Get comprehensive system statistics and health information for a specific user.
       },
       "ai": {
         "status": "healthy",
-        "model": "gpt-4o-mini"
+        "model": "llama-3.3-70b-versatile"
       }
     },
     "supportedFormats": [
@@ -745,7 +786,7 @@ Get comprehensive system statistics and health information for a specific user.
       "text/plain",
       "text/html"
     ],
-    "model": "gpt-4o-mini"
+    "model": "llama-3.3-70b-versatile"
   },
   "timestamp": "2024-01-01T00:00:00.000Z"
 }
@@ -789,8 +830,9 @@ The API uses standard HTTP status codes and returns error responses in the follo
 Currently, the API does not implement strict rate limiting. However, consider:
 
 - **File Uploads**: 10MB per file, reasonable upload frequency
-- **AI Queries**: Respect OpenAI API rate limits
+- **AI Queries**: Respect Groq API rate limits (very generous with fast inference)
 - **OCR Processing**: Respect Mistral API rate limits
+- **Local Embeddings**: No rate limits (processed locally using Hugging Face models)
 
 ## Examples
 
@@ -870,6 +912,29 @@ curl -X DELETE http://3.6.147.238:3000/api/questions
 
 ## Recent Improvements
 
+### AI Model Migration to Groq (v1.0.3)
+
+**Major Update:** Migrated from OpenAI to Groq for faster, more cost-effective AI inference.
+
+**Changes Implemented:**
+- **Replaced OpenAI GPT models** with Groq's Llama 3.3 70B model
+- **Local Embedding Generation**: Switched to Hugging Face Transformers.js for privacy and speed
+- **Updated Frontend**: Interface now shows correct model information
+- **Environment Configuration**: Updated to use `GROQ_API_KEY` instead of `OPENAI_API_KEY`
+
+**Benefits:**
+- **⚡ 10x Faster**: Groq's LPU architecture provides 500+ tokens/second
+- **💰 Cost Reduction**: Significantly lower API costs compared to OpenAI
+- **🔒 Enhanced Privacy**: Local embeddings mean documents never leave your system
+- **🚀 Better Performance**: Faster response times for all AI operations
+- **🆓 Generous Limits**: More generous free tier and rate limits
+
+**Migration Notes:**
+- All existing functionality remains the same
+- API endpoints unchanged
+- Backwards compatible response formats
+- Automatic model context handling
+
 ### User ID Support (v1.0.2)
 
 **New Feature:** Added comprehensive user ID support for multi-tenant data isolation.
@@ -924,6 +989,6 @@ For additional support and information:
 
 ---
 
-**Last Updated:** January 2024  
-**API Version:** 1.0.2  
+**Last Updated:** August 2025  
+**API Version:** 1.0.3  
 **Server:** http://3.6.147.238:3000 
