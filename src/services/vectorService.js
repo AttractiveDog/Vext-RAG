@@ -735,6 +735,74 @@ async initialize() {
   }
 
   /**
+   * Delete all chunks for a parent document
+   * @param {string} parentDocumentId - Parent document ID to delete all chunks for
+   * @returns {Promise<boolean>} - Success status
+   */
+  async deleteDocumentChunks(parentDocumentId) {
+    try {
+      if (!this.collection) {
+        await this.initialize();
+      }
+
+      console.log(`🗑️ Deleting all chunks for parent document: ${parentDocumentId}`);
+
+      // Get all chunks for this parent document
+      const chunks = await this.collection.get({
+        where: { parentDocumentId: parentDocumentId }
+      });
+
+      if (chunks.ids && chunks.ids.length > 0) {
+        console.log(`📊 Found ${chunks.ids.length} chunks to delete for document: ${parentDocumentId}`);
+        
+        // Delete all chunks in a single operation
+        await this.collection.delete({
+          ids: chunks.ids
+        });
+
+        console.log(`✅ Successfully deleted ${chunks.ids.length} chunks for document: ${parentDocumentId}`);
+      } else {
+        console.log(`ℹ️ No chunks found for document: ${parentDocumentId}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting document chunks:', error);
+      throw new Error(`Failed to delete document chunks: ${error.message}`);
+    }
+  }
+
+  /**
+   * Delete multiple documents by IDs
+   * @param {Array<string>} documentIds - Array of document IDs to delete
+   * @returns {Promise<boolean>} - Success status
+   */
+  async deleteDocuments(documentIds) {
+    try {
+      if (!this.collection) {
+        await this.initialize();
+      }
+
+      if (!Array.isArray(documentIds) || documentIds.length === 0) {
+        throw new Error('Document IDs must be a non-empty array');
+      }
+
+      console.log(`🗑️ Deleting ${documentIds.length} documents...`);
+
+      // Delete all documents in a single operation
+      await this.collection.delete({
+        ids: documentIds
+      });
+
+      console.log(`✅ Successfully deleted ${documentIds.length} documents`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting documents:', error);
+      throw new Error(`Failed to delete documents: ${error.message}`);
+    }
+  }
+
+  /**
    * Update document metadata
    * @param {string} documentId - Document ID to update
    * @param {Object} metadata - New metadata
@@ -811,11 +879,23 @@ async initialize() {
         console.log(`📊 Found ${userDocuments.length} documents to clear for user: ${userId}`);
 
         if (userDocuments.length > 0) {
-          // Delete user-specific documents
+          // Delete user-specific documents in batches for better performance
           const documentIds = userDocuments.map(doc => doc.id);
-          await this.collection.delete({
-            ids: documentIds
-          });
+          const batchSize = 500;
+          
+          for (let i = 0; i < documentIds.length; i += batchSize) {
+            const batch = documentIds.slice(i, i + batchSize);
+            await this.collection.delete({
+              ids: batch
+            });
+            console.log(`🗑️ Deleted batch of ${batch.length} documents for user: ${userId} (${Math.min(i + batchSize, documentIds.length)}/${documentIds.length})`);
+            
+            // Small delay between batches
+            if (i + batchSize < documentIds.length) {
+              await new Promise(resolve => setTimeout(resolve, 50));
+            }
+          }
+          
           console.log(`✅ Successfully cleared ${userDocuments.length} documents for user: ${userId}`);
         }
         
@@ -847,41 +927,41 @@ async initialize() {
         } catch (deleteError) {
           console.log('⚠️ Could not delete entire collection, trying batch deletion...');
           
-          // Fallback to batch deletion if collection deletion fails
-          const count = await this.collection.count();
-          console.log(`📊 Found ${count} documents to clear`);
+                     // Fallback to batch deletion if collection deletion fails
+           const count = await this.collection.count();
+           console.log(`📊 Found ${count} documents to clear`);
 
-          if (count > 0) {
-            // Use smaller batches and add delays to prevent overwhelming the database
-            const batchSize = 100;
-            let offset = 0;
-            let totalDeleted = 0;
+           if (count > 0) {
+             // Use larger batches for more efficient deletion
+             const batchSize = 500;
+             let offset = 0;
+             let totalDeleted = 0;
 
-            while (offset < count) {
-              try {
-                const batch = await this.collection.get({
-                  limit: batchSize,
-                  offset: offset
-                });
+             while (offset < count) {
+               try {
+                 const batch = await this.collection.get({
+                   limit: batchSize,
+                   offset: offset
+                 });
 
-                if (batch.ids && batch.ids.length > 0) {
-                  await this.collection.delete({
-                    ids: batch.ids
-                  });
-                  totalDeleted += batch.ids.length;
-                  console.log(`🗑️ Deleted batch of ${batch.ids.length} documents (${totalDeleted}/${count})`);
-                  
-                  // Add a small delay between batches to prevent overwhelming the database
-                  await new Promise(resolve => setTimeout(resolve, 100));
-                }
+                 if (batch.ids && batch.ids.length > 0) {
+                   await this.collection.delete({
+                     ids: batch.ids
+                   });
+                   totalDeleted += batch.ids.length;
+                   console.log(`🗑️ Deleted batch of ${batch.ids.length} documents (${totalDeleted}/${count})`);
+                   
+                   // Shorter delay between batches for faster deletion
+                   await new Promise(resolve => setTimeout(resolve, 50));
+                 }
 
-                offset += batchSize;
-              } catch (batchError) {
-                console.error(`❌ Error deleting batch at offset ${offset}:`, batchError);
-                throw batchError;
-              }
-            }
-          }
+                 offset += batchSize;
+               } catch (batchError) {
+                 console.error(`❌ Error deleting batch at offset ${offset}:`, batchError);
+                 throw batchError;
+               }
+             }
+           }
 
           console.log('✅ Successfully cleared all documents from collection');
           return true;
