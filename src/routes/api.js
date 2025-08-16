@@ -555,18 +555,15 @@ router.delete('/documents/:id', async (req, res) => {
       });
     }
 
-    // Delete all chunks of the parent document
-    const chunkIds = chunksToDelete.map(chunk => chunk.id);
-    for (const chunkId of chunkIds) {
-      await vectorService.deleteDocument(chunkId);
-    }
+    // Delete all chunks of the parent document in one operation
+    await vectorService.deleteDocumentChunks(id);
 
     res.json({
       success: true,
       message: 'Document and all its chunks deleted successfully',
       data: { 
         documentId: id,
-        chunksDeleted: chunkIds.length
+        chunksDeleted: chunksToDelete.length
       },
       timestamp: new Date().toISOString()
     });
