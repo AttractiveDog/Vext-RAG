@@ -6,17 +6,20 @@ class HuggingFaceEmbeddingService {
     this.modelName = 'Xenova/all-MiniLM-L6-v2';
     this.dimensions = 384; // all-MiniLM-L6-v2 produces 384-dimensional embeddings
     this.maxRetries = 3;
-    this.batchSize = 16; // Reduced batch size to prevent memory issues
+    this.batchSize = 8; // Further reduced batch size for EC2 stability
+    this.isEC2 = process.env.EC2_INSTANCE || process.env.AWS_REGION || false;
   }
 
   /**
-   * Initialize the embedding pipeline lazily
+   * Initialize the embedding pipeline lazily with EC2 optimizations
    */
   async _initPipeline() {
     if (!this.pipeline) {
       console.log(`🤗 Loading Hugging Face model: ${this.modelName}...`);
+      console.log(`🖥️ Running on EC2: ${this.isEC2 ? 'Yes' : 'No'}`);
+      
       try {
-        this.pipeline = await pipeline('feature-extraction', this.modelName, {
+        const pipelineOptions = {
           // Cache the model locally to avoid re-downloading
           cache_dir: './models',
           // Add memory optimization options
@@ -26,7 +29,15 @@ class HuggingFaceEmbeddingService {
               console.log(`📊 Model loading progress: ${Math.round(progress.progress * 100)}%`);
             }
           }
-        });
+        };
+
+        // Add EC2-specific optimizations
+        if (this.isEC2) {
+          pipelineOptions.backend = 'cpu'; // Force CPU backend for stability
+          console.log('🖥️ Using CPU backend for EC2 stability');
+        }
+
+        this.pipeline = await pipeline('feature-extraction', this.modelName, pipelineOptions);
         console.log(`✅ Successfully loaded ${this.modelName}`);
       } catch (error) {
         console.error(`❌ Failed to load ${this.modelName}:`, error);
@@ -64,19 +75,36 @@ class HuggingFaceEmbeddingService {
         const batchEmbeddings = await this._processBatchWithRetry(pipeline, batch, batchNumber);
         embeddings.push(...batchEmbeddings);
         
-        // Log memory usage every 5 batches
-        if (batchNumber % 5 === 0) {
+        // Log memory usage every 3 batches for EC2
+        if (batchNumber % 3 === 0) {
           this.logMemoryUsage(`After batch ${batchNumber}`);
         }
         
-        // Add a small delay between batches to allow memory cleanup
-        if (i + this.batchSize < texts.length) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        
-        // Force garbage collection if available
-        if (global.gc) {
-          global.gc();
+        // More aggressive memory cleanup for EC2
+        if (this.isEC2) {
+          // Longer delay between batches on EC2
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          // Force garbage collection more frequently
+          if (global.gc) {
+            global.gc();
+            console.log(`🧹 Forced GC after batch ${batchNumber}`);
+          }
+          
+          // Check memory usage and warn if too high
+          const memory = this.getMemoryUsage();
+          if (memory.rss > 1500) { // 1.5GB threshold
+            console.warn(`⚠️ High memory usage detected: ${memory.rss} MB`);
+          }
+        } else {
+          // Standard cleanup for non-EC2
+          if (i + this.batchSize < texts.length) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+          
+          if (global.gc) {
+            global.gc();
+          }
         }
       }
 
@@ -104,7 +132,7 @@ class HuggingFaceEmbeddingService {
   }
 
   /**
-   * Process a batch with retry logic
+   * Process a batch with retry logic and EC2 optimizations
    * @param {Object} pipeline - The model pipeline
    * @param {Array<string>} batch - Batch of texts to process
    * @param {number} batchNumber - Current batch number for logging
@@ -153,14 +181,22 @@ class HuggingFaceEmbeddingService {
         console.error(`❌ Error processing batch ${batchNumber} (attempt ${attempt}/${this.maxRetries}):`, batchError.message);
         
         if (attempt < this.maxRetries) {
-          console.log(`🔄 Retrying batch ${batchNumber} in 2 seconds...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Longer retry delay for EC2
+          const retryDelay = this.isEC2 ? 5000 : 2000;
+          console.log(`🔄 Retrying batch ${batchNumber} in ${retryDelay/1000} seconds...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
           
           // Try to reinitialize the pipeline if it seems corrupted
           if (batchError.message.includes('model') || batchError.message.includes('pipeline')) {
             console.log(`🔄 Reinitializing pipeline for batch ${batchNumber}...`);
             this.pipeline = null;
             await this._initPipeline();
+          }
+          
+          // Force garbage collection before retry
+          if (global.gc) {
+            global.gc();
+            console.log(`🧹 Forced GC before retry ${attempt}`);
           }
         }
       }

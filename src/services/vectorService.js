@@ -347,7 +347,7 @@ async initialize() {
    * @param {number} batchSize - Size of each batch
    * @returns {Promise<Array<Array<number>>>} - Array of embedding vectors
    */
-  async generateEmbeddingsInBatches(texts, batchSize = 16) {
+  async generateEmbeddingsInBatches(texts, batchSize = 8) {
     const allEmbeddings = [];
     
     for (let i = 0; i < texts.length; i += batchSize) {
