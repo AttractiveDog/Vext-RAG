@@ -38,7 +38,7 @@ class AIService {
       }
 
       // Truncate context to fit within token limits
-      const maxTokens = options.maxTokens || parseInt(process.env.AI_MAX_TOKENS) || 1000;
+      const maxTokens = 5000;
       const truncatedContext = this.truncateContext(context, question, maxTokens);
       
       console.log(`📊 Context stats: ${context.length} documents -> ${truncatedContext.documents.length} documents (${truncatedContext.estimatedTokens} estimated tokens)`);
@@ -525,7 +525,7 @@ For pricing questions: If the exact product name isn't found but you see pricing
         messages: [
           { role: 'user', content: prompt }
         ],
-        max_tokens: options.maxTokens || parseInt(process.env.AI_MAX_TOKENS) || 500,
+        max_tokens: 5000,
         temperature: options.temperature || parseFloat(process.env.AI_TEMPERATURE) || 0.5
       });
 
@@ -566,7 +566,7 @@ For pricing questions: If the exact product name isn't found but you see pricing
         messages: [
           { role: 'user', content: prompt }
         ],
-        max_tokens: options.maxTokens || parseInt(process.env.AI_MAX_TOKENS) || 300,
+        max_tokens: 5000,
         temperature: options.temperature || parseFloat(process.env.AI_TEMPERATURE) || 0.3
       });
 

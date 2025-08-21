@@ -366,7 +366,7 @@ router.post('/query', async (req, res) => {
       try {
         answer = await aiService.generateAnswer(question, flattenedContext, {
           temperature,
-          maxTokens: retryCount > 0 ? Math.max(500, 1000 - (retryCount * 200)) : 1000 // Reduce max tokens on retry
+          maxTokens: 5000 // Reduce max tokens on retry
         });
         break; // Success, exit retry loop
       } catch (error) {
@@ -1008,7 +1008,7 @@ router.post('/ocr/analyze', async (req, res) => {
         
         const aiAnalysis = await aiService.generateResponse(analysisPrompt_full, {
           temperature: 0.3,
-          maxTokens: 2000
+          maxTokens: 5000
         });
 
         // Clean up uploaded file

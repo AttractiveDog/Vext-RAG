@@ -163,7 +163,7 @@ router.post('/query', async (req, res) => {
     console.log('🤖 Generating AI response...');
     const aiResponse = await aiService.generateAnswer(query, emailContext, {
       temperature,
-      maxTokens: 2000
+      maxTokens: 5000
     });
 
     // Format email summaries for response
