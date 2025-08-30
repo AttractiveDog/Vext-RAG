@@ -6,7 +6,7 @@ class HuggingFaceEmbeddingService {
     this.modelName = 'Xenova/all-MiniLM-L6-v2';
     this.dimensions = 384; // all-MiniLM-L6-v2 produces 384-dimensional embeddings
     this.maxRetries = 3;
-    this.batchSize = 2; // Further reduced batch size for maximum memory stability
+    this.batchSize = 8; // Optimized batch size for performance and memory balance
     this.isEC2 = process.env.EC2_INSTANCE || process.env.AWS_REGION || false;
     this.memoryThresholdMB = 1200; // Memory threshold for cleanup (1.2GB)
     this.consecutiveMemoryChecks = 0;
@@ -102,14 +102,14 @@ class HuggingFaceEmbeddingService {
           }
         }
 
-        // Adaptive delay based on memory usage - increased for stability
+        // Adaptive delay based on memory usage - optimized for 8-item batches
         const memory = this.getMemoryUsage();
-        let delay = 300; // Base delay increased
+        let delay = 200; // Base delay optimized for performance
 
         if (memory.rss > 1000) {
-          delay = 800; // Much longer delay for high memory
+          delay = 500; // Longer delay for high memory
         } else if (memory.arrayBuffers > 10) {
-          delay = 500; // Longer delay for buffer accumulation
+          delay = 300; // Medium delay for buffer accumulation
         }
 
         if (i + this.batchSize < texts.length) {

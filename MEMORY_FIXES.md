@@ -19,10 +19,9 @@ The memory issues were caused by:
 
 ## Implemented Fixes
 
-### 1. Reduced Batch Size
-- **Before**: 8 items per batch
-- **After**: 2 items per batch (maximum memory stability)
-- **Impact**: Reduces memory pressure per batch processing cycle
+### 1. Optimized Batch Size
+- **Batch Size**: 8 items per batch (balanced for performance and memory)
+- **Impact**: Maintains processing speed while using memory management improvements
 
 ### 2. Enhanced Tensor Cleanup
 - Added `_cleanupTensor()` method with safe proxy object handling
@@ -50,14 +49,15 @@ The memory issues were caused by:
 
 ## Test Results
 
-After implementing fixes:
+With optimized 8-item batches and memory management:
 
 ```
 📊 Memory Usage Change:
-   RSS: +102 MB (vs +104 MB before)
-   Heap Used: +7 MB (vs +11 MB before)
+   RSS: +106 MB
+   Heap Used: +8 MB
    External: +47 MB (stable)
-   ArrayBuffers: +45 MB (stable, but still high due to Xenova)
+   ArrayBuffers: +46 MB (Xenova library limitation)
+⏱️ Processing Time: 520ms (vs 2268ms with 2-item batches)
 ```
 
 **Key Improvements:**

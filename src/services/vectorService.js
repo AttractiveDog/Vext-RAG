@@ -347,7 +347,7 @@ async initialize() {
    * @param {number} batchSize - Size of each batch
    * @returns {Promise<Array<Array<number>>>} - Array of embedding vectors
    */
-  async generateEmbeddingsInBatches(texts, batchSize = 2) {
+  async generateEmbeddingsInBatches(texts, batchSize = 8) {
     const allEmbeddings = [];
     
     for (let i = 0; i < texts.length; i += batchSize) {
@@ -361,9 +361,9 @@ async initialize() {
         const batchEmbeddings = await vextService.generateEmbeddings(batch);
         allEmbeddings.push(...batchEmbeddings);
         
-        // Longer delay between batches to allow memory cleanup
+bact        // Optimized delay between batches for memory cleanup and performance
         if (i + batchSize < texts.length) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
         
         // Force garbage collection if available
