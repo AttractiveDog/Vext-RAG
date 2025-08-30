@@ -6,8 +6,10 @@ class HuggingFaceEmbeddingService {
     this.modelName = 'Xenova/all-MiniLM-L6-v2';
     this.dimensions = 384; // all-MiniLM-L6-v2 produces 384-dimensional embeddings
     this.maxRetries = 3;
-    this.batchSize = 8; // Further reduced batch size for EC2 stability
+    this.batchSize = 2; // Further reduced batch size for maximum memory stability
     this.isEC2 = process.env.EC2_INSTANCE || process.env.AWS_REGION || false;
+    this.memoryThresholdMB = 1200; // Memory threshold for cleanup (1.2GB)
+    this.consecutiveMemoryChecks = 0;
   }
 
   /**
@@ -63,48 +65,65 @@ class HuggingFaceEmbeddingService {
       
       // Process texts in smaller batches to manage memory
       const embeddings = [];
-      
+      let totalProcessed = 0;
+
       for (let i = 0; i < texts.length; i += this.batchSize) {
         const batch = texts.slice(i, i + this.batchSize);
         const batchNumber = Math.floor(i / this.batchSize) + 1;
         const totalBatches = Math.ceil(texts.length / this.batchSize);
-        
+
         console.log(`   Processing batch ${batchNumber}/${totalBatches} (${batch.length} texts)...`);
-        
+
         // Add retry logic for each batch
         const batchEmbeddings = await this._processBatchWithRetry(pipeline, batch, batchNumber);
         embeddings.push(...batchEmbeddings);
-        
-        // Log memory usage every 3 batches for EC2
-        if (batchNumber % 3 === 0) {
-          this.logMemoryUsage(`After batch ${batchNumber}`);
-        }
-        
-        // More aggressive memory cleanup for EC2
-        if (this.isEC2) {
-          // Longer delay between batches on EC2
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          // Force garbage collection more frequently
-          if (global.gc) {
-            global.gc();
-            console.log(`🧹 Forced GC after batch ${batchNumber}`);
-          }
-          
-          // Check memory usage and warn if too high
+        totalProcessed += batchEmbeddings.length;
+
+        // Enhanced memory monitoring and cleanup
+        const shouldMonitorMemory = batchNumber % 3 === 0 || totalProcessed >= 25;
+        if (shouldMonitorMemory) {
           const memory = this.getMemoryUsage();
-          if (memory.rss > 1500) { // 1.5GB threshold
-            console.warn(`⚠️ High memory usage detected: ${memory.rss} MB`);
+          console.log(`📊 Memory after batch ${batchNumber}: RSS=${memory.rss}MB, ArrayBuffers=${memory.arrayBuffers}MB`);
+
+          // Check for memory pressure
+          if (memory.rss > this.memoryThresholdMB) {
+            this.consecutiveMemoryChecks++;
+            console.warn(`⚠️ High memory usage detected (${memory.rss}MB > ${this.memoryThresholdMB}MB), count: ${this.consecutiveMemoryChecks}`);
+
+            if (this.consecutiveMemoryChecks >= 2) {
+              console.log('🔄 Triggering aggressive memory cleanup...');
+              await this._forceMemoryCleanup();
+              await this._cleanupPipeline();
+              await this._initPipeline();
+              this.consecutiveMemoryChecks = 0;
+            }
+          } else {
+            this.consecutiveMemoryChecks = 0;
           }
-        } else {
-          // Standard cleanup for non-EC2
-          if (i + this.batchSize < texts.length) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
-          
-          if (global.gc) {
-            global.gc();
-          }
+        }
+
+        // Adaptive delay based on memory usage - increased for stability
+        const memory = this.getMemoryUsage();
+        let delay = 300; // Base delay increased
+
+        if (memory.rss > 1000) {
+          delay = 800; // Much longer delay for high memory
+        } else if (memory.arrayBuffers > 10) {
+          delay = 500; // Longer delay for buffer accumulation
+        }
+
+        if (i + this.batchSize < texts.length) {
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+
+        // Periodic aggressive cleanup for large processing
+        if (totalProcessed >= 50 && batchNumber % 5 === 0) {
+          await this._forceMemoryCleanup();
+        }
+
+        // Reset counter for periodic cleanup
+        if (totalProcessed >= 100) {
+          totalProcessed = 0;
         }
       }
 
@@ -132,7 +151,7 @@ class HuggingFaceEmbeddingService {
   }
 
   /**
-   * Process a batch with retry logic and EC2 optimizations
+   * Process a batch with retry logic and enhanced memory management
    * @param {Object} pipeline - The model pipeline
    * @param {Array<string>} batch - Batch of texts to process
    * @param {number} batchNumber - Current batch number for logging
@@ -140,68 +159,93 @@ class HuggingFaceEmbeddingService {
    */
   async _processBatchWithRetry(pipeline, batch, batchNumber) {
     let lastError = null;
-    
+
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+      let batchEmbeddings = null;
+      let processedEmbeddings = null;
+
       try {
         // Generate embeddings for the batch
-        const batchEmbeddings = await pipeline(batch, {
+        batchEmbeddings = await pipeline(batch, {
           pooling: 'mean',
           normalize: true
         });
-        
+
         // Convert tensor to regular arrays - Xenova returns tensors with .data and .dims properties
-        let processedEmbeddings;
-        
         if (batchEmbeddings && batchEmbeddings.data && batchEmbeddings.dims) {
           // This is a tensor from Xenova
           const [batchSize, embeddingDim] = batchEmbeddings.dims;
-          const data = Array.from(batchEmbeddings.data);
-          
+
           processedEmbeddings = [];
+
+          // Process each embedding individually to minimize memory footprint
           for (let i = 0; i < batchSize; i++) {
             const start = i * embeddingDim;
             const end = start + embeddingDim;
-            processedEmbeddings.push(data.slice(start, end));
+
+            // Create individual Float32Array for each embedding and convert to regular array
+            const embeddingData = new Float32Array(batchEmbeddings.data.slice(start, end));
+            processedEmbeddings.push(Array.from(embeddingData));
+
+            // Clear the temporary array reference
+            embeddingData.fill(0);
           }
+
+          // CRITICAL: Tensor cleanup after processing all embeddings
+          this._cleanupTensor(batchEmbeddings);
+
         } else if (Array.isArray(batchEmbeddings)) {
           // Already an array of embeddings
-          processedEmbeddings = batchEmbeddings.map(emb => Array.from(emb));
+          processedEmbeddings = batchEmbeddings.map(emb => {
+            // Ensure we create new arrays, not references
+            return Array.isArray(emb) ? [...emb] : Array.from(emb);
+          });
         } else {
           // Fallback for other formats
           processedEmbeddings = [Array.from(batchEmbeddings)];
         }
-        
+
         // Validate the processed embeddings
         this._validateEmbeddings(processedEmbeddings, batchNumber);
-        
+
+        // Force aggressive garbage collection after processing
+        await this._forceMemoryCleanup();
+
+        // Clear local references
+        batchEmbeddings = null;
+
         return processedEmbeddings;
-        
+
       } catch (batchError) {
         lastError = batchError;
         console.error(`❌ Error processing batch ${batchNumber} (attempt ${attempt}/${this.maxRetries}):`, batchError.message);
-        
+
+        // Clean up any partial results
+        if (batchEmbeddings) {
+          this._cleanupTensor(batchEmbeddings);
+          batchEmbeddings = null;
+        }
+        processedEmbeddings = null;
+
         if (attempt < this.maxRetries) {
+          // Aggressive cleanup before retry
+          await this._forceMemoryCleanup();
+
           // Longer retry delay for EC2
           const retryDelay = this.isEC2 ? 5000 : 2000;
           console.log(`🔄 Retrying batch ${batchNumber} in ${retryDelay/1000} seconds...`);
           await new Promise(resolve => setTimeout(resolve, retryDelay));
-          
+
           // Try to reinitialize the pipeline if it seems corrupted
           if (batchError.message.includes('model') || batchError.message.includes('pipeline')) {
             console.log(`🔄 Reinitializing pipeline for batch ${batchNumber}...`);
-            this.pipeline = null;
+            await this._cleanupPipeline();
             await this._initPipeline();
-          }
-          
-          // Force garbage collection before retry
-          if (global.gc) {
-            global.gc();
-            console.log(`🧹 Forced GC before retry ${attempt}`);
           }
         }
       }
     }
-    
+
     throw new Error(`Failed to generate embeddings for batch ${batchNumber} after ${this.maxRetries} attempts: ${lastError.message}`);
   }
 
@@ -333,15 +377,110 @@ class HuggingFaceEmbeddingService {
   }
 
   /**
+   * Comprehensive tensor cleanup to prevent memory leaks
+   * @private
+   * @param {Object} tensor - The tensor object to clean up
+   */
+  _cleanupTensor(tensor) {
+    if (!tensor) return;
+
+    try {
+      // Dispose of tensor if it has a dispose method (Xenova specific)
+      if (typeof tensor.dispose === 'function') {
+        tensor.dispose();
+        return; // If dispose() works, that's the best cleanup
+      }
+
+      // For Xenova tensors that don't have dispose, try safe cleanup
+      // Avoid direct property manipulation on proxy objects
+      if (tensor && typeof tensor === 'object') {
+        // Try to access properties safely
+        try {
+          if (tensor.data && tensor.data.buffer) {
+            // If it's a typed array, we can try to clear the buffer
+            if (tensor.data.constructor && tensor.data.constructor.name.includes('Array')) {
+              tensor.data.fill(0); // Clear the array data
+            }
+          }
+        } catch (e) {
+          // Ignore buffer access errors
+        }
+      }
+
+    } catch (error) {
+      // Only log if it's not a proxy-related error
+      if (!error.message.includes('proxy') && !error.message.includes('trap')) {
+        console.warn('⚠️ Error during tensor cleanup:', error.message);
+      }
+    }
+  }
+
+  /**
+   * Force aggressive memory cleanup
+   * @private
+   */
+  async _forceMemoryCleanup() {
+    // Force garbage collection multiple times
+    if (global.gc) {
+      global.gc();
+      // Small delay to let GC complete
+      await new Promise(resolve => setTimeout(resolve, 10));
+      global.gc();
+      await new Promise(resolve => setTimeout(resolve, 10));
+      global.gc();
+    }
+
+    // Clear any cached references in the pipeline if it exists
+    if (this.pipeline && this.pipeline.model && this.pipeline.model.cache) {
+      try {
+        this.pipeline.model.cache.clear();
+      } catch (e) {
+        // Ignore cache clearing errors
+      }
+    }
+  }
+
+  /**
+   * Clean up pipeline resources to prevent memory leaks
+   * @private
+   */
+  async _cleanupPipeline() {
+    if (this.pipeline) {
+      try {
+        // Dispose of pipeline resources if the method exists
+        if (typeof this.pipeline.dispose === 'function') {
+          await this.pipeline.dispose();
+        }
+
+        // Clear all pipeline-related properties
+        if (this.pipeline.model) {
+          this.pipeline.model = null;
+        }
+        if (this.pipeline.tokenizer) {
+          this.pipeline.tokenizer = null;
+        }
+        if (this.pipeline.processor) {
+          this.pipeline.processor = null;
+        }
+
+        // Clear the pipeline reference
+        this.pipeline = null;
+
+        console.log('🧹 Cleaned up Hugging Face pipeline resources');
+      } catch (error) {
+        console.warn('⚠️ Error during pipeline cleanup:', error.message);
+        // Force clear the pipeline even if cleanup fails
+        this.pipeline = null;
+      }
+    }
+  }
+
+  /**
    * Clean up resources
    */
   async cleanup() {
-    if (this.pipeline) {
-      // Clean up pipeline resources if needed
-      this.pipeline = null;
-      console.log('🧹 Cleaned up Hugging Face embedding service');
-    }
-    
+    await this._cleanupPipeline();
+
     // Force garbage collection if available
     if (global.gc) {
       global.gc();

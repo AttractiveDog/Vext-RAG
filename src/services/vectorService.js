@@ -342,12 +342,12 @@ async initialize() {
   }
 
   /**
-   * Generate embeddings in batches to avoid timeouts
+   * Generate embeddings in batches to avoid timeouts and memory issues
    * @param {Array<string>} texts - Texts to embed
    * @param {number} batchSize - Size of each batch
    * @returns {Promise<Array<Array<number>>>} - Array of embedding vectors
    */
-  async generateEmbeddingsInBatches(texts, batchSize = 8) {
+  async generateEmbeddingsInBatches(texts, batchSize = 2) {
     const allEmbeddings = [];
     
     for (let i = 0; i < texts.length; i += batchSize) {
@@ -361,9 +361,9 @@ async initialize() {
         const batchEmbeddings = await vextService.generateEmbeddings(batch);
         allEmbeddings.push(...batchEmbeddings);
         
-        // Small delay between batches to allow memory cleanup
+        // Longer delay between batches to allow memory cleanup
         if (i + batchSize < texts.length) {
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
         
         // Force garbage collection if available
@@ -375,7 +375,13 @@ async initialize() {
         throw new Error(`Embedding generation failed at batch ${batchNumber}: ${error.message}`);
       }
     }
-    
+
+    // Final memory cleanup after all batches
+    if (global.gc) {
+      global.gc();
+      console.log('🧹 Final memory cleanup after embedding generation');
+    }
+
     return allEmbeddings;
   }
 
