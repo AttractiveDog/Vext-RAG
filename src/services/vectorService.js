@@ -360,8 +360,8 @@ async initialize() {
       try {
         const batchEmbeddings = await vextService.generateEmbeddings(batch);
         allEmbeddings.push(...batchEmbeddings);
-        
-bact        // Optimized delay between batches for memory cleanup and performance
+
+        // Optimized delay between batches for memory cleanup and performance
         if (i + batchSize < texts.length) {
           await new Promise(resolve => setTimeout(resolve, 300));
         }
