@@ -151,35 +151,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        .progress-container {
-            padding: 15px;
-            border-radius: 8px;
-            background: #f8f9fa;
-            border-left: 4px solid #007bff;
-        }
-
-        .progress-container h4 {
-            margin: 0 0 10px 0;
-            color: #333;
-        }
-
-        .progress-container p {
-            margin: 0 0 10px 0;
-            color: #555;
-        }
-
-        .result.warning {
-            background: #fff3cd;
-            border-color: #ffc107;
-            color: #856404;
-        }
-
-        .result.info {
-            background: #d1ecf1;
-            border-color: #17a2b8;
-            color: #0c5460;
-        }
-
         .error {
             background: #fee;
             border-left-color: #e74c3c;
@@ -395,6 +366,76 @@
             font-style: italic;
             padding: 40px 20px;
         }
+
+        /* Progress bar styles */
+        .progress-container {
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            background: #f0f0f0;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background-image: linear-gradient(
+                -45deg,
+                rgba(255, 255, 255, 0.2) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255, 255, 255, 0.2) 50%,
+                rgba(255, 255, 255, 0.2) 75%,
+                transparent 75%,
+                transparent
+            );
+            background-size: 50px 50px;
+            animation: move 2s linear infinite;
+        }
+
+        @keyframes move {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 50px 50px;
+            }
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .progress-stage {
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .progress-emoji {
+            font-size: 20px;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -575,163 +616,114 @@
                 }
             }
 
-            // Show initial loading state
-            showLoading(resultDiv, 'Starting document upload...');
-
-            let eventSource = null;
-            let uploadController = null;
+            showLoading(resultDiv);
 
             try {
-                // Start the upload
-                uploadController = new AbortController();
-                const uploadResponse = await fetch(`${API_BASE}/ingest`, {
+                // Start the upload process
+                const response = await fetch(`${API_BASE}/ingest`, {
                     method: 'POST',
-                    body: formData,
-                    signal: uploadController.signal
+                    body: formData
                 });
 
-                const result = await uploadResponse.json();
+                const result = await response.json();
 
-                if (result.success) {
-                    // Upload started successfully, now track progress via SSE
-                    if (result.jobId) {
-                        trackUploadProgress(result.jobId, resultDiv, fileInput, metadataInput);
-                    } else {
-                        // Fallback for backward compatibility
-                        showResult(resultDiv, 
-                            `Document uploaded successfully! Created ${result.data.totalChunks} chunks.`, 
-                            'success'
-                        );
-                        resetFileInput(fileInput, metadataInput);
-                    }
+                if (result.success && result.jobId) {
+                    // Show initial progress
+                    showProgress(resultDiv, 'Document processing started...', 0);
+                    
+                    // Start tracking progress via SSE
+                    trackUploadProgress(result.jobId, resultDiv, fileInput, metadataInput);
                 } else {
-                    showResult(resultDiv, `Upload failed: ${result.error}`, 'error');
+                    showResult(resultDiv, `Upload failed: ${result.error || 'Unknown error'}`, 'error');
                 }
             } catch (error) {
-                if (error.name === 'AbortError') {
-                    showResult(resultDiv, `Upload timed out after 5 minutes. The document may still be processing in the background.`, 'error');
-                } else {
-                    showResult(resultDiv, `Upload failed: ${error.message}`, 'error');
-                }
+                showResult(resultDiv, `Upload failed: ${error.message}`, 'error');
             }
         }
 
         function trackUploadProgress(jobId, resultDiv, fileInput, metadataInput) {
             const eventSource = new EventSource(`${API_BASE}/ingest/progress/${jobId}`);
             
-            eventSource.onopen = function() {
-                console.log('SSE connection opened for progress tracking');
-            };
-
             eventSource.onmessage = function(event) {
-                try {
-                    const data = JSON.parse(event.data);
-                    
-                    switch (data.type) {
-                        case 'connected':
-                            console.log('Connected to progress stream');
-                            break;
-                            
-                        case 'progress':
-                            updateProgressDisplay(data.progress, resultDiv);
-                            break;
-                            
-                        case 'keepalive':
-                            // Keep connection alive - no UI update needed
-                            break;
-                            
-                        default:
-                            console.log('Unknown SSE event type:', data.type);
-                    }
-                } catch (error) {
-                    console.error('Error parsing SSE data:', error);
-                }
-            };
-
-            eventSource.onerror = function(error) {
-                console.error('SSE connection error:', error);
-                eventSource.close();
-                showResult(resultDiv, 'Lost connection to progress stream. Document may still be processing.', 'warning');
-            };
-
-            // Handle completion or error
-            const checkCompletion = setInterval(async () => {
-                try {
-                    const response = await fetch(`${API_BASE}/ingest/status/${jobId}`);
-                    const status = await response.json();
-                    
-                    if (status.completed) {
-                        clearInterval(checkCompletion);
-                        eventSource.close();
+                const data = JSON.parse(event.data);
+                
+                switch (data.type) {
+                    case 'connected':
+                        console.log('SSE connection established');
+                        break;
                         
-                        if (status.success) {
-                            showResult(resultDiv, 
-                                `Document uploaded successfully! Created ${status.data.totalChunks} chunks.`, 
-                                'success'
-                            );
-                            resetFileInput(fileInput, metadataInput);
-                        } else {
-                            showResult(resultDiv, `Upload failed: ${status.error}`, 'error');
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error checking completion status:', error);
+                    case 'progress':
+                        showProgress(resultDiv, data.message, data.progress, data.stage);
+                        break;
+                        
+                    case 'complete':
+                        showResult(resultDiv, 
+                            `Document uploaded successfully! Created ${data.data.totalChunks} chunks.`, 
+                            'success'
+                        );
+                        fileInput.value = '';
+                        metadataInput.value = '';
+                        document.querySelector('.file-upload p').textContent = 'Click to select or drag and drop files here';
+                        eventSource.close();
+                        break;
+                        
+                    case 'error':
+                        showResult(resultDiv, `Processing failed: ${data.message}`, 'error');
+                        eventSource.close();
+                        break;
+                        
+                    case 'timeout':
+                        showResult(resultDiv, 'Connection timeout. The document may still be processing in the background.', 'error');
+                        eventSource.close();
+                        break;
+                        
+                    case 'keepalive':
+                        // Connection is alive, no action needed
+                        break;
                 }
-            }, 5000); // Check every 5 seconds
-
-            // Cleanup after 10 minutes
-            setTimeout(() => {
-                clearInterval(checkCompletion);
+            };
+            
+            eventSource.onerror = function(event) {
+                console.error('SSE connection error:', event);
+                showResult(resultDiv, 'Connection lost. The document may still be processing in the background.', 'error');
                 eventSource.close();
-            }, 600000);
+            };
         }
 
-        function updateProgressDisplay(progress, resultDiv) {
-            const { stage, message, progress: percent, filename, totalChunks, error, warning } = progress;
+        function showProgress(element, message, progress, stage = '') {
+            const stageEmojis = {
+                'starting': '🚀',
+                'validating': '✅',
+                'processing': '⚡',
+                'chunking': '📄',
+                'preparing': '🔧',
+                'vectorizing': '🧠',
+                'cleanup': '🧹',
+                'complete': '🎉',
+                'error': '❌'
+            };
             
-            let statusClass = 'info';
-            if (error) statusClass = 'error';
-            else if (warning) statusClass = 'warning';
-            else if (stage === 'complete') statusClass = 'success';
+            const emoji = stageEmojis[stage] || '⏳';
             
-            let progressBar = '';
-            if (percent > 0 && percent < 100) {
-                progressBar = `
-                    <div style="margin: 10px 0;">
-                        <div style="background: #e0e0e0; border-radius: 10px; height: 20px; overflow: hidden;">
-                            <div style="background: linear-gradient(90deg, #4CAF50, #45a049); height: 100%; width: ${percent}%; transition: width 0.3s ease;"></div>
+            element.innerHTML = `
+                <div class="result">
+                    <div class="progress-container">
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <span class="progress-emoji">${emoji}</span>
+                            <span style="font-weight: 600;">${message}</span>
                         </div>
-                        <div style="text-align: center; margin-top: 5px; font-size: 12px; color: #666;">
-                            ${percent}% complete
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${progress}%;"></div>
+                        </div>
+                        <div class="progress-text">
+                            ${progress}% Complete
                         </div>
                     </div>
-                `;
-            }
-            
-            let additionalInfo = '';
-            if (totalChunks) {
-                additionalInfo = `<br><small>Processing ${totalChunks} chunks...</small>`;
-            }
-            
-            const html = `
-                <div class="progress-container">
-                    <h4>📄 Processing: ${filename}</h4>
-                    <p><strong>${message}</strong>${additionalInfo}</p>
-                    ${progressBar}
-                    <div style="font-size: 12px; color: #666; margin-top: 10px;">
-                        Stage: ${stage.charAt(0).toUpperCase() + stage.slice(1)}
+                    <div class="progress-stage">
+                        Processing stage: ${stage || 'Unknown'} | Keep-alive connection active
                     </div>
                 </div>
             `;
-            
-            resultDiv.innerHTML = html;
-            resultDiv.className = `result ${statusClass}`;
-        }
-
-        function resetFileInput(fileInput, metadataInput) {
-            fileInput.value = '';
-            metadataInput.value = '';
-            document.querySelector('.file-upload p').textContent = 'Click to select or drag and drop files here';
         }
 
         async function askQuestion() {
@@ -965,11 +957,11 @@
             }
         }
 
-        function showLoading(element, message = 'Loading...') {
+        function showLoading(element) {
             element.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
-                    <p>${message}</p>
+                    <p>Loading...</p>
                 </div>
             `;
         }

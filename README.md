@@ -5,6 +5,7 @@ A powerful Retrieval-Augmented Generation (RAG) system built with Vext for intel
 ## Features
 
 - **Document Ingestion**: Support for PDF, DOCX, TXT, and HTML files
+- **Keep-Alive Processing**: Real-time progress tracking with Server-Sent Events (SSE) to prevent timeouts
 - **Vector Embeddings**: Using Hugging Face's all-MiniLM-L6-v2 for local, high-quality text embeddings (384D)
 - **Semantic Search**: Advanced retrieval using vector similarity
 - **Question Answering**: AI-powered responses with context from retrieved documents

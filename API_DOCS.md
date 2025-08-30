@@ -136,7 +136,7 @@ The Vext RAG system uses an intelligent document chunking system to optimize sea
 
 #### POST /api/ingest
 
-Upload and process documents for vector storage with real-time progress tracking and keep-alive functionality.
+Upload and process documents for vector storage.
 
 **Content-Type:** `multipart/form-data`
 
@@ -166,10 +166,9 @@ curl -X POST http://3.6.147.238:3000/api/ingest \
 {
   "success": true,
   "message": "Document processed and ingested successfully",
-  "jobId": "job_uuid_123",
   "data": {
     "filename": "document.pdf",
-    "documentId": "parent_uuid",
+    "parentDocumentId": "parent_uuid",
     "totalChunks": 15,
     "chunkStats": {
       "totalChunks": 15,
@@ -192,105 +191,6 @@ curl -X POST http://3.6.147.238:3000/api/ingest \
 ```
 
 **Note:** The document is split into multiple chunks for optimal search performance. Each chunk maintains a reference to the parent document ID and can be retrieved individually or as part of the complete document.
-
-**Progress Tracking:** The response includes a `jobId` that can be used to track processing progress via Server-Sent Events (SSE).
-
-### Track Document Processing Progress
-
-#### GET /api/ingest/progress/:jobId
-
-Track real-time progress of document processing using Server-Sent Events (SSE).
-
-**Parameters:**
-- `jobId` (path): Job ID returned from the ingest endpoint
-
-**Response Format:** Server-Sent Events (SSE)
-
-**Event Types:**
-- `connected`: Initial connection established
-- `progress`: Progress update with current stage and percentage
-- `keepalive`: Connection keep-alive packet (sent every 2 seconds)
-
-**Example SSE Response:**
-```
-data: {"type":"connected","jobId":"job_uuid_123","timestamp":"2024-01-01T00:00:00.000Z"}
-
-data: {"type":"progress","jobId":"job_uuid_123","progress":{"stage":"validating","message":"Validating file format and size...","progress":10,"filename":"document.pdf"},"timestamp":"2024-01-01T00:00:00.000Z"}
-
-data: {"type":"progress","jobId":"job_uuid_123","progress":{"stage":"processing","message":"Processing document content...","progress":25,"filename":"document.pdf"},"timestamp":"2024-01-01T00:00:00.000Z"}
-
-data: {"type":"keepalive","jobId":"job_uuid_123","timestamp":"2024-01-01T00:00:00.000Z"}
-```
-
-**Processing Stages:**
-- **Starting** (0%): Initializing document processing
-- **Validating** (10%): Checking file format and size
-- **Processing** (25%): Extracting text content
-- **Chunking** (50%): Breaking document into searchable chunks
-- **Preparing** (70%): Preparing chunks for vector database
-- **Vectorizing** (85%): Adding chunks to vector database
-- **Cleanup** (95%): Cleaning up temporary files
-- **Complete** (100%): Processing finished successfully
-
-**Keep-Alive Functionality:**
-- Sends keep-alive packets every 2 seconds to maintain connection
-- Prevents connection timeouts during long processing operations
-- Automatically handles client disconnections
-- Provides real-time feedback for large document processing
-
-### Check Processing Status
-
-#### GET /api/ingest/status/:jobId
-
-Check the current status of a document processing job.
-
-**Parameters:**
-- `jobId` (path): Job ID returned from the ingest endpoint
-
-**Response:**
-```json
-{
-  "jobId": "job_uuid_123",
-  "completed": true,
-  "success": true,
-  "progress": {
-    "stage": "complete",
-    "message": "Document processing completed successfully!",
-    "progress": 100,
-    "filename": "document.pdf",
-    "totalChunks": 15,
-    "documentId": "parent_uuid"
-  },
-  "data": {
-    "filename": "document.pdf",
-    "documentId": "parent_uuid",
-    "totalChunks": 15,
-    "chunkStats": {
-      "totalChunks": 15,
-      "averageChunkSize": 850,
-      "minChunkSize": 200,
-      "maxChunkSize": 1200,
-      "totalWords": 12500,
-      "totalCharacters": 75000
-    },
-    "chunkIds": ["parent_uuid_chunk_0", "parent_uuid_chunk_1", "parent_uuid_chunk_2"],
-    "metadata": {
-      "title": "Sample Document",
-      "author": "John Doe",
-      "category": "technical",
-      "uploadDate": "2024-01-01T00:00:00.000Z"
-    }
-  },
-  "timestamp": "2024-01-01T00:00:00.000Z"
-}
-```
-
-**Status Fields:**
-- `completed`: Boolean indicating if processing is finished
-- `success`: Boolean indicating if processing was successful
-- `progress`: Current progress information
-- `data`: Final result data (only present when completed and successful)
-- `error`: Error message (only present when completed and failed)
 
 ### List Documents
 
@@ -939,104 +839,29 @@ Currently, the API does not implement strict rate limiting. However, consider:
 ### Complete Workflow Example
 
 ```bash
-# 1. Upload a document with progress tracking
+# 1. Upload a document
 curl -X POST http://3.6.147.238:3000/api/ingest \
   -F "file=@technical_manual.pdf" \
   -F "userId=user123" \
   -F 'metadata={"title":"Technical Manual","author":"Engineering Team","category":"technical"}'
 
-# Response includes jobId for progress tracking:
-# {
-#   "success": true,
-#   "jobId": "job_uuid_123",
-#   "data": { ... }
-# }
-
-# 2. Track processing progress (optional - for real-time updates)
-# Open a new terminal and connect to SSE endpoint:
-curl -N http://3.6.147.238:3000/api/ingest/progress/job_uuid_123
-
-# 3. Check processing status (alternative to SSE)
-curl -X GET http://3.6.147.238:3000/api/ingest/status/job_uuid_123
-
-# 4. Ask a question
+# 2. Ask a question
 curl -X POST http://3.6.147.238:3000/api/query \
   -H "Content-Type: application/json" \
   -d '{"question": "What are the main features described in the technical manual?", "userId": "user123", "topK": 5}'
 
-# 5. Get document list
+# 3. Get document list
 curl -X GET "http://3.6.147.238:3000/api/documents?userId=user123"
 
-# 6. Generate summary
+# 4. Generate summary
 curl -X POST http://3.6.147.238:3000/api/summarize \
   -H "Content-Type: application/json" \
   -d '{"userId": "user123", "maxTokens": 1500}'
 
-# 7. Extract topics
+# 5. Extract topics
 curl -X POST http://3.6.147.238:3000/api/topics \
   -H "Content-Type: application/json" \
   -d '{"userId": "user123", "maxTokens": 1000}'
-```
-
-### Progress Tracking Example (JavaScript)
-
-```javascript
-// Upload document and track progress
-async function uploadWithProgress() {
-  // 1. Start upload
-  const formData = new FormData();
-  formData.append('file', fileInput.files[0]);
-  formData.append('userId', 'user123');
-  
-  const response = await fetch('http://3.6.147.238:3000/api/ingest', {
-    method: 'POST',
-    body: formData
-  });
-  
-  const result = await response.json();
-  
-  if (result.success && result.jobId) {
-    // 2. Track progress via SSE
-    const eventSource = new EventSource(`http://3.6.147.238:3000/api/ingest/progress/${result.jobId}`);
-    
-    eventSource.onmessage = function(event) {
-      const data = JSON.parse(event.data);
-      
-      switch (data.type) {
-        case 'connected':
-          console.log('Connected to progress stream');
-          break;
-          
-        case 'progress':
-          console.log(`Stage: ${data.progress.stage}, Progress: ${data.progress.progress}%`);
-          updateProgressBar(data.progress.progress);
-          break;
-          
-        case 'keepalive':
-          // Connection maintained
-          break;
-      }
-    };
-    
-    // 3. Check completion
-    const checkCompletion = setInterval(async () => {
-      const statusResponse = await fetch(`http://3.6.147.238:3000/api/ingest/status/${result.jobId}`);
-      const status = await statusResponse.json();
-      
-      if (status.completed) {
-        clearInterval(checkCompletion);
-        eventSource.close();
-        
-        if (status.success) {
-          console.log('Document processing completed!');
-          console.log(`Created ${status.data.totalChunks} chunks`);
-        } else {
-          console.error('Processing failed:', status.error);
-        }
-      }
-    }, 5000);
-  }
-}
 ```
 
 ### OCR Workflow Example
@@ -1086,45 +911,6 @@ curl -X DELETE http://3.6.147.238:3000/api/questions
 ```
 
 ## Recent Improvements
-
-### Keep-Alive and Progress Tracking (v1.0.4)
-
-**Major Update:** Implemented real-time progress tracking and keep-alive functionality for document processing.
-
-**Changes Implemented:**
-- **Server-Sent Events (SSE)**: Real-time progress updates during document processing
-- **Keep-Alive Packets**: Automatic connection maintenance every 2 seconds
-- **Progress Tracking**: Detailed stage-by-stage progress with percentage completion
-- **Job Management**: Unique job IDs for tracking individual processing tasks
-- **Enhanced Frontend**: Real-time progress bars and status updates in web interface
-
-**New Endpoints:**
-- `GET /api/ingest/progress/:jobId` - SSE endpoint for real-time progress tracking
-- `GET /api/ingest/status/:jobId` - Check processing status and results
-
-**Benefits:**
-- **🔄 No More Timeouts**: Connection stays alive during long processing operations
-- **📊 Real-Time Feedback**: Users see progress updates instead of waiting in silence
-- **🛡️ Error Recovery**: Graceful handling of connection issues and disconnections
-- **⚡ Better UX**: Visual progress bars and detailed stage information
-- **🔧 Resource Management**: Automatic cleanup of progress tracking data
-
-**Processing Stages:**
-- **Starting** (0%): Initializing document processing
-- **Validating** (10%): Checking file format and size
-- **Processing** (25%): Extracting text content
-- **Chunking** (50%): Breaking document into searchable chunks
-- **Preparing** (70%): Preparing chunks for vector database
-- **Vectorizing** (85%): Adding chunks to vector database
-- **Cleanup** (95%): Cleaning up temporary files
-- **Complete** (100%): Processing finished successfully
-
-**Technical Features:**
-- **Keep-Alive Interval**: 2 seconds
-- **Progress Cleanup**: 30 seconds after completion
-- **Connection Timeout**: 10 minutes maximum
-- **Status Check Interval**: 5 seconds
-- **Automatic Resource Cleanup**: Memory management for long-running operations
 
 ### AI Model Migration to Groq (v1.0.3)
 
@@ -1204,5 +990,5 @@ For additional support and information:
 ---
 
 **Last Updated:** August 2025  
-**API Version:** 1.0.4  
+**API Version:** 1.0.3  
 **Server:** http://3.6.147.238:3000 

@@ -12,15 +12,137 @@ import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
 
+// Progress tracking storage
+const processingProgress = new Map();
+const processingResults = new Map();
+
 // Initialize text chunker
 const chunker = new textChunker({
   chunkSize: parseInt(process.env.CHUNK_SIZE) || 1000,
   chunkOverlap: parseInt(process.env.CHUNK_OVERLAP) || 200
 });
 
-// Store for tracking processing progress
-const processingProgress = new Map();
-const processingResults = new Map();
+/**
+ * GET /api/ingest/progress/:jobId
+ * SSE endpoint for progress tracking with keep-alive
+ */
+router.get('/ingest/progress/:jobId', (req, res) => {
+  const { jobId } = req.params;
+  
+  // Set SSE headers
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Cache-Control'
+  });
+
+  console.log(`📡 SSE connection established for job ${jobId}`);
+
+  // Send initial connection message
+  res.write(`data: ${JSON.stringify({
+    type: 'connected',
+    jobId,
+    timestamp: new Date().toISOString()
+  })}\n\n`);
+
+  // Keep-alive interval (every 2 seconds)
+  const keepAliveInterval = setInterval(() => {
+    const progress = processingProgress.get(jobId);
+    if (progress) {
+      res.write(`data: ${JSON.stringify({
+        type: 'progress',
+        ...progress,
+        timestamp: new Date().toISOString()
+      })}\n\n`);
+    } else {
+      res.write(`data: ${JSON.stringify({
+        type: 'keepalive',
+        jobId,
+        timestamp: new Date().toISOString()
+      })}\n\n`);
+    }
+  }, 2000);
+
+  // Check for completion every 5 seconds
+  const completionCheckInterval = setInterval(() => {
+    const result = processingResults.get(jobId);
+    if (result) {
+      res.write(`data: ${JSON.stringify({
+        type: 'complete',
+        ...result,
+        timestamp: new Date().toISOString()
+      })}\n\n`);
+      
+      // Clean up intervals and close connection
+      clearInterval(keepAliveInterval);
+      clearInterval(completionCheckInterval);
+      res.end();
+      
+      // Clean up progress data after 30 seconds
+      setTimeout(() => {
+        processingProgress.delete(jobId);
+        processingResults.delete(jobId);
+      }, 30000);
+    }
+  }, 5000);
+
+  // Handle client disconnect
+  req.on('close', () => {
+    console.log(`📡 SSE connection closed for job ${jobId}`);
+    clearInterval(keepAliveInterval);
+    clearInterval(completionCheckInterval);
+  });
+
+  // Handle connection timeout (10 minutes)
+  setTimeout(() => {
+    if (!res.headersSent) {
+      res.write(`data: ${JSON.stringify({
+        type: 'timeout',
+        jobId,
+        message: 'Connection timeout',
+        timestamp: new Date().toISOString()
+      })}\n\n`);
+      res.end();
+    }
+    clearInterval(keepAliveInterval);
+    clearInterval(completionCheckInterval);
+  }, 600000); // 10 minutes
+});
+
+/**
+ * GET /api/ingest/status/:jobId
+ * Check processing status
+ */
+router.get('/ingest/status/:jobId', (req, res) => {
+  const { jobId } = req.params;
+  
+  const progress = processingProgress.get(jobId);
+  const result = processingResults.get(jobId);
+  
+  if (result) {
+    res.json({
+      success: true,
+      status: 'complete',
+      data: result,
+      timestamp: new Date().toISOString()
+    });
+  } else if (progress) {
+    res.json({
+      success: true,
+      status: 'processing',
+      data: progress,
+      timestamp: new Date().toISOString()
+    });
+  } else {
+    res.status(404).json({
+      success: false,
+      error: 'Job not found',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
 
 /**
  * GET /api/health
@@ -81,108 +203,28 @@ router.get('/health', async (req, res) => {
 });
 
 /**
- * GET /api/ingest/progress/:jobId
- * Server-Sent Events endpoint for tracking document processing progress
- */
-router.get('/ingest/progress/:jobId', (req, res) => {
-  const { jobId } = req.params;
-  
-  // Set headers for SSE
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Cache-Control'
-  });
-
-  // Send initial connection message
-  res.write(`data: ${JSON.stringify({
-    type: 'connected',
-    jobId,
-    timestamp: new Date().toISOString()
-  })}\n\n`);
-
-  // Set up interval to send keep-alive packets
-  const keepAliveInterval = setInterval(() => {
-    const progress = processingProgress.get(jobId);
-    if (progress) {
-      res.write(`data: ${JSON.stringify({
-        type: 'progress',
-        jobId,
-        progress,
-        timestamp: new Date().toISOString()
-      })}\n\n`);
-    } else {
-      res.write(`data: ${JSON.stringify({
-        type: 'keepalive',
-        jobId,
-        timestamp: new Date().toISOString()
-      })}\n\n`);
-    }
-  }, 2000); // Send keep-alive every 2 seconds
-
-  // Handle client disconnect
-  req.on('close', () => {
-    clearInterval(keepAliveInterval);
-    console.log(`Client disconnected from progress stream for job: ${jobId}`);
-  });
-
-  // Handle connection close
-  res.on('close', () => {
-    clearInterval(keepAliveInterval);
-    console.log(`Progress stream closed for job: ${jobId}`);
-  });
-});
-
-/**
  * POST /api/ingest
- * Upload and process documents
+ * Upload and process documents with progress tracking
  */
 router.post('/ingest', async (req, res) => {
   const upload = req.app.locals.upload;
   
   upload.single('file')(req, res, async (err) => {
-    // Generate a unique job ID for this processing task
-    const jobId = uuidv4();
-    
     try {
       console.log('🚀 Starting ingest endpoint...');
       
-      // Initialize progress tracking
-      processingProgress.set(jobId, {
-        stage: 'starting',
-        message: 'Initializing document processing...',
-        progress: 0,
-        filename: req.file?.originalname || 'Unknown file'
-      });
-
       if (err) {
         console.error('❌ Multer error:', err);
-        processingProgress.set(jobId, {
-          stage: 'error',
-          message: err.message,
-          progress: 0,
-          error: true
-        });
         return res.status(400).json({
           error: err.message,
-          jobId,
           timestamp: new Date().toISOString()
         });
       }
 
       if (!req.file) {
         console.error('❌ No file uploaded');
-        processingProgress.set(jobId, {
-          stage: 'error',
-          message: 'No file uploaded',
-          progress: 0,
-          error: true
-        });
         return res.status(400).json({
           error: 'No file uploaded',
-          jobId,
           timestamp: new Date().toISOString()
         });
       }
@@ -191,288 +233,234 @@ router.post('/ingest', async (req, res) => {
       const userId = req.body.userId || req.query.userId;
       if (!userId) {
         console.error('❌ User ID is required');
-        processingProgress.set(jobId, {
-          stage: 'error',
-          message: 'User ID is required',
-          progress: 0,
-          error: true
-        });
         return res.status(400).json({
           error: 'User ID is required',
-          jobId,
           timestamp: new Date().toISOString()
         });
       }
 
-      const filePath = req.file.path;
-      const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : {};
+      // Generate job ID for progress tracking
+      const jobId = uuidv4();
       
-      // Add user ID to metadata
-      metadata.userId = userId;
-      
-      console.log('📝 Processing file:', req.file.filename);
-      console.log('👤 User ID:', userId);
-
-      // Update progress - File validation
+      // Initialize progress tracking
       processingProgress.set(jobId, {
-        stage: 'validating',
-        message: 'Validating file format and size...',
-        progress: 10,
-        filename: req.file.originalname
+        stage: 'starting',
+        message: 'Initializing document processing...',
+        progress: 0
       });
 
-      // Validate file
-      console.log('⚡ Validating file...');
-      await documentProcessor.validateFile(filePath);
-      console.log('✅ File validation complete');
-
-      // Update progress - Document processing
-      processingProgress.set(jobId, {
-        stage: 'processing',
-        message: 'Processing document content...',
-        progress: 25,
-        filename: req.file.originalname
-      });
-
-      // Process document
-      console.log('⚡ Processing document...');
-      const processedDoc = await documentProcessor.processDocument(filePath, metadata);
-      console.log('✅ Document processing complete');
-
-      // Update progress - Text chunking
-      processingProgress.set(jobId, {
-        stage: 'chunking',
-        message: 'Breaking document into searchable chunks...',
-        progress: 50,
-        filename: req.file.originalname
-      });
-
-      // Chunk the text
-      console.log('⚡ Chunking text...');
-      const chunks = chunker.chunkText(processedDoc.text);
-      const chunkStats = chunker.getChunkStats(chunks);
-      console.log(`✅ Text chunking complete: ${chunks.length} chunks`);
-
-      // Update progress - Preparing for vector database
-      processingProgress.set(jobId, {
-        stage: 'preparing',
-        message: `Preparing ${chunks.length} chunks for vector database...`,
-        progress: 70,
-        filename: req.file.originalname,
-        totalChunks: chunks.length
-      });
-
-      // Prepare documents for vector database
-      console.log('⚡ Preparing documents for vector database...');
-      
-      // Generate a unique document ID for the original file
-      const originalDocumentId = uuidv4();
-      
-      const documents = chunks.map((chunk, index) => ({
-        text: chunk.text,
-        metadata: {
-          ...processedDoc.metadata,
-          // Document-level identifiers
-          documentId: originalDocumentId,
-          originalFilename: processedDoc.metadata.filename,
-          // Chunk-level identifiers
-          chunkIndex: index,
-          totalChunks: chunks.length,
-          chunkStart: chunk.start,
-          chunkEnd: chunk.end,
-          // Processing metadata
-          processedAt: new Date().toISOString(),
-          chunkSize: chunk.text.length,
-          // Ensure consistent metadata structure
-          source: 'file_upload',
-          type: 'chunk'
-        }
-      }));
-      
-      console.log(`✅ Document preparation complete: ${documents.length} chunks from 1 document`);
-      console.log(`📄 Original document ID: ${originalDocumentId}`);
-      console.log(`📊 Chunk statistics: ${chunkStats.totalChunks} chunks, avg size: ${Math.round(chunkStats.averageChunkSize)} chars`);
-
-      // Update progress - Adding to vector database
-      processingProgress.set(jobId, {
-        stage: 'vectorizing',
-        message: `Adding ${chunks.length} chunks to vector database...`,
-        progress: 85,
-        filename: req.file.originalname,
-        totalChunks: chunks.length
-      });
-
-      // Add to vector database with timeout
-      console.log(`⚡ Adding ${documents.length} documents to vector database...`);
-      console.log('🚨 This may take a while for large documents...');
-      
-      // Set a timeout for the vector operation (10 minutes)
-      const vectorTimeout = setTimeout(() => {
-        console.log('⚠️ Vector database operation is taking longer than expected...');
-        processingProgress.set(jobId, {
-          stage: 'vectorizing',
-          message: 'Vector database operation is taking longer than expected...',
-          progress: 90,
-          filename: req.file.originalname,
-          totalChunks: chunks.length,
-          warning: true
-        });
-      }, 60000); // 1 minute warning
-      
-      const chunkIds = await vectorService.addDocumentChunks(documents, originalDocumentId);
-      clearTimeout(vectorTimeout);
-      
-      console.log(`✅ Successfully added ${chunkIds.length} chunks to vector database`);
-
-      // Update progress - Cleanup
-      processingProgress.set(jobId, {
-        stage: 'cleanup',
-        message: 'Cleaning up temporary files...',
-        progress: 95,
-        filename: req.file.originalname,
-        totalChunks: chunks.length
-      });
-
-      // Clean up uploaded file
-      console.log('⚡ Cleaning up uploaded file...');
-      await fs.unlink(filePath);
-      console.log(`🗑️ Cleaned up uploaded file: ${filePath}`);
-
-      // Store the final result
-      const finalResult = {
+      // Return job ID immediately for progress tracking
+      res.json({
         success: true,
-        message: 'Document processed and ingested successfully',
-        data: {
-          filename: processedDoc.metadata.filename,
-          documentId: originalDocumentId,
-          totalChunks: chunks.length,
-          chunkStats,
-          chunkIds,
-          metadata: processedDoc.metadata
-        }
-      };
-      
-      processingResults.set(jobId, finalResult);
-
-      // Update progress - Complete
-      processingProgress.set(jobId, {
-        stage: 'complete',
-        message: 'Document processing completed successfully!',
-        progress: 100,
-        filename: req.file.originalname,
-        totalChunks: chunks.length,
-        documentId: originalDocumentId
+        jobId,
+        message: 'Document processing started. Use the job ID to track progress.',
+        timestamp: new Date().toISOString()
       });
 
-      const response = {
-        ...finalResult,
-        jobId,
-        timestamp: new Date().toISOString()
-      };
-
-      console.log(`📤 Sending response to frontend:`, JSON.stringify(response, null, 2));
-      
-      // Check if response has already been sent
-      if (res.headersSent) {
-        console.log(`⚠️ Response already sent, skipping...`);
-        return;
-      }
-      
-      res.json(response);
-      console.log(`✅ Response sent successfully`);
-
-      // Clean up progress tracking after a delay
-      setTimeout(() => {
-        processingProgress.delete(jobId);
-        processingResults.delete(jobId);
-      }, 30000); // Keep progress data for 30 seconds after completion
+      // Continue processing in background
+      processDocumentAsync(jobId, req.file, userId, req.body.metadata);
 
     } catch (error) {
       console.error('❌ Error in ingest endpoint:', error);
-      console.error('❌ Error stack:', error.stack);
-      
-      // Store error result
-      const errorResult = {
-        success: false,
-        error: error.message
-      };
-      
-      processingResults.set(jobId, errorResult);
-
-      // Update progress with error
-      processingProgress.set(jobId, {
-        stage: 'error',
-        message: `Error: ${error.message}`,
-        progress: 0,
-        error: true,
-        filename: req.file?.originalname || 'Unknown file'
-      });
-      
-      // Clean up uploaded file on error
-      if (req.file) {
-        try {
-          await fs.unlink(req.file.path);
-          console.log(`🗑️ Cleaned up uploaded file after error: ${req.file.path}`);
-        } catch (unlinkError) {
-          console.error('Error deleting uploaded file:', unlinkError);
-        }
-      }
       
       const errorResponse = {
         error: error.message,
-        jobId,
         timestamp: new Date().toISOString()
       };
       
-      console.log(`📤 Sending error response to frontend:`, JSON.stringify(errorResponse, null, 2));
-      
-      // Check if response has already been sent
-      if (res.headersSent) {
-        console.log(`⚠️ Error response already sent, skipping...`);
-        return;
+      if (!res.headersSent) {
+        res.status(500).json(errorResponse);
       }
-      
-      res.status(500).json(errorResponse);
-      console.log(`✅ Error response sent successfully`);
-
-      // Clean up progress tracking after a delay
-      setTimeout(() => {
-        processingProgress.delete(jobId);
-        processingResults.delete(jobId);
-      }, 30000); // Keep progress data for 30 seconds after error
     }
   });
 });
 
 /**
- * GET /api/ingest/status/:jobId
- * Get the status of a document processing job
+ * Async document processing function with progress tracking
  */
-router.get('/ingest/status/:jobId', (req, res) => {
-  const { jobId } = req.params;
-  
-  const progress = processingProgress.get(jobId);
-  const result = processingResults.get(jobId);
-  
-  if (!progress) {
-    return res.status(404).json({
-      error: 'Job not found',
+async function processDocumentAsync(jobId, file, userId, metadataString) {
+  try {
+    console.log(`🔄 Starting async processing for job ${jobId}`);
+    
+    // Update progress - Starting
+    processingProgress.set(jobId, {
+      stage: 'starting',
+      message: 'Initializing document processing...',
+      progress: 0
+    });
+
+    const filePath = file.path;
+    const metadata = metadataString ? JSON.parse(metadataString) : {};
+    
+    // Add user ID to metadata
+    metadata.userId = userId;
+    
+    console.log('📝 Processing file:', file.filename);
+    console.log('👤 User ID:', userId);
+
+    // Update progress - Validating
+    processingProgress.set(jobId, {
+      stage: 'validating',
+      message: 'Validating file format and size...',
+      progress: 10
+    });
+
+    // Validate file
+    console.log('⚡ Validating file...');
+    await documentProcessor.validateFile(filePath);
+    console.log('✅ File validation complete');
+
+    // Update progress - Processing
+    processingProgress.set(jobId, {
+      stage: 'processing',
+      message: 'Extracting text content from document...',
+      progress: 25
+    });
+
+    // Process document
+    console.log('⚡ Processing document...');
+    const processedDoc = await documentProcessor.processDocument(filePath, metadata);
+    console.log('✅ Document processing complete');
+
+    // Update progress - Chunking
+    processingProgress.set(jobId, {
+      stage: 'chunking',
+      message: 'Breaking document into searchable chunks...',
+      progress: 50
+    });
+
+    // Chunk the text
+    console.log('⚡ Chunking text...');
+    const chunks = chunker.chunkText(processedDoc.text);
+    const chunkStats = chunker.getChunkStats(chunks);
+    console.log(`✅ Text chunking complete: ${chunks.length} chunks`);
+
+    // Update progress - Preparing
+    processingProgress.set(jobId, {
+      stage: 'preparing',
+      message: 'Preparing chunks for vector database...',
+      progress: 70
+    });
+
+    // Prepare documents for vector database
+    console.log('⚡ Preparing documents for vector database...');
+    
+    // Generate a unique document ID for the original file
+    const originalDocumentId = uuidv4();
+    
+    const documents = chunks.map((chunk, index) => ({
+      text: chunk.text,
+      metadata: {
+        ...processedDoc.metadata,
+        // Document-level identifiers
+        documentId: originalDocumentId,
+        originalFilename: processedDoc.metadata.filename,
+        // Chunk-level identifiers
+        chunkIndex: index,
+        totalChunks: chunks.length,
+        chunkStart: chunk.start,
+        chunkEnd: chunk.end,
+        // Processing metadata
+        processedAt: new Date().toISOString(),
+        chunkSize: chunk.text.length,
+        // Ensure consistent metadata structure
+        source: 'file_upload',
+        type: 'chunk'
+      }
+    }));
+    
+    console.log(`✅ Document preparation complete: ${documents.length} chunks from 1 document`);
+    console.log(`📄 Original document ID: ${originalDocumentId}`);
+    console.log(`📊 Chunk statistics: ${chunkStats.totalChunks} chunks, avg size: ${Math.round(chunkStats.averageChunkSize)} chars`);
+
+    // Update progress - Vectorizing
+    processingProgress.set(jobId, {
+      stage: 'vectorizing',
+      message: 'Adding chunks to vector database...',
+      progress: 85
+    });
+
+    // Add to vector database with timeout
+    console.log(`⚡ Adding ${documents.length} documents to vector database...`);
+    console.log('🚨 This may take a while for large documents...');
+    
+    // Set a timeout for the vector operation (10 minutes)
+    const vectorTimeout = setTimeout(() => {
+      console.log('⚠️ Vector database operation is taking longer than expected...');
+    }, 60000); // 1 minute warning
+    
+    const chunkIds = await vectorService.addDocumentChunks(documents, originalDocumentId);
+    clearTimeout(vectorTimeout);
+    
+    console.log(`✅ Successfully added ${chunkIds.length} chunks to vector database`);
+
+    // Update progress - Cleanup
+    processingProgress.set(jobId, {
+      stage: 'cleanup',
+      message: 'Cleaning up temporary files...',
+      progress: 95
+    });
+
+    // Clean up uploaded file
+    console.log('⚡ Cleaning up uploaded file...');
+    await fs.unlink(filePath);
+    console.log(`🗑️ Cleaned up uploaded file: ${filePath}`);
+
+    // Update progress - Complete
+    processingProgress.set(jobId, {
+      stage: 'complete',
+      message: 'Document processing completed successfully!',
+      progress: 100
+    });
+
+    const result = {
+      success: true,
+      message: 'Document processed and ingested successfully',
+      data: {
+        filename: processedDoc.metadata.filename,
+        documentId: originalDocumentId,
+        totalChunks: chunks.length,
+        chunkStats,
+        chunkIds,
+        metadata: processedDoc.metadata
+      },
       timestamp: new Date().toISOString()
+    };
+
+    // Store final result
+    processingResults.set(jobId, result);
+    
+    console.log(`✅ Async processing completed for job ${jobId}`);
+
+  } catch (error) {
+    console.error(`❌ Error in async processing for job ${jobId}:`, error);
+    console.error('❌ Error stack:', error.stack);
+    
+    // Clean up uploaded file on error
+    try {
+      await fs.unlink(file.path);
+      console.log(`🗑️ Cleaned up uploaded file after error: ${file.path}`);
+    } catch (unlinkError) {
+      console.error('Error deleting uploaded file:', unlinkError);
+    }
+    
+    // Store error result
+    const errorResult = {
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    };
+    
+    processingResults.set(jobId, errorResult);
+    
+    // Update progress with error
+    processingProgress.set(jobId, {
+      stage: 'error',
+      message: `Processing failed: ${error.message}`,
+      progress: 0
     });
   }
-  
-  const isCompleted = progress.stage === 'complete' || progress.stage === 'error';
-  
-  res.json({
-    jobId,
-    completed: isCompleted,
-    success: progress.stage === 'complete',
-    progress,
-    data: result?.data,
-    error: result?.error,
-    timestamp: new Date().toISOString()
-  });
-});
+}
 
 /**
  * POST /api/query
