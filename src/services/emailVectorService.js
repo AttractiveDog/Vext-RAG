@@ -190,10 +190,13 @@ class EmailVectorService {
         ...filters
       };
 
+      // Increase search results when sender filter is applied to get better content matches
+      const searchLimit = filters.sender_email ? topK * 3 : topK;
+
       // Search in user-specific collection
       const results = await collection.query({
         queryEmbeddings: [queryEmbedding],
-        nResults: topK,
+        nResults: searchLimit,
         where: chromaFilters
       });
 
@@ -212,10 +215,144 @@ class EmailVectorService {
         };
       });
 
-      console.log(`✅ Found ${formattedResults.length} relevant emails for user: ${userID}`);
-      return formattedResults;
+      // Apply content-based filtering when sender filter is used
+      let filteredResults = formattedResults;
+      if (filters.sender_email) {
+        filteredResults = this.filterByContentRelevance(formattedResults, query, topK);
+      }
+
+      console.log(`✅ Found ${filteredResults.length} relevant emails for user: ${userID}`);
+      return filteredResults;
     } catch (error) {
       console.error(`❌ Error searching emails for user ${userID}:`, error);
+      throw new Error(`Failed to search emails for user ${userID}: ${error.message}`);
+    }
+  }
+
+  /**
+   * Filter search results by content relevance when sender filter is applied
+   * @param {Array} results - Search results
+   * @param {string} query - Original search query
+   * @param {number} topK - Maximum number of results to return
+   * @returns {Array} - Filtered results
+   */
+  filterByContentRelevance(results, query, topK) {
+    // Extract key terms from the query (simple approach)
+    const queryTerms = query.toLowerCase().split(/\s+/).filter(term => 
+      term.length > 2 && !['the', 'and', 'or', 'but', 'for', 'from', 'with', 'about', 'related', 'emails'].includes(term)
+    );
+
+    // Score each result based on content relevance
+    const scoredResults = results.map(result => {
+      const emailText = (result.text || '').toLowerCase();
+      const emailSubject = (result.metadata.subject || '').toLowerCase();
+      const emailBody = (result.metadata.body || '').toLowerCase();
+      
+      let contentScore = 0;
+      let termMatches = 0;
+
+      // Check for exact term matches in subject and body
+      queryTerms.forEach(term => {
+        const subjectMatches = (emailSubject.match(new RegExp(term, 'g')) || []).length;
+        const bodyMatches = (emailBody.match(new RegExp(term, 'g')) || []).length;
+        const textMatches = (emailText.match(new RegExp(term, 'g')) || []).length;
+        
+        if (subjectMatches > 0 || bodyMatches > 0 || textMatches > 0) {
+          termMatches++;
+          // Weight subject matches higher than body matches
+          contentScore += (subjectMatches * 3) + (bodyMatches * 1) + (textMatches * 1);
+        }
+      });
+
+      // Calculate final score combining semantic similarity and content relevance
+      const finalScore = (result.similarity * 0.6) + (contentScore * 0.4);
+      
+      return {
+        ...result,
+        contentScore,
+        termMatches,
+        finalScore
+      };
+    });
+
+    // Filter out results with no content relevance and sort by final score
+    const relevantResults = scoredResults
+      .filter(result => result.termMatches > 0 || result.similarity > 0.7) // Keep high similarity results even without exact term matches
+      .sort((a, b) => b.finalScore - a.finalScore)
+      .slice(0, topK);
+
+    console.log(`🔍 Content filtering: ${results.length} -> ${relevantResults.length} relevant emails`);
+    
+    return relevantResults.map(result => ({
+      id: result.id,
+      text: result.text,
+      metadata: result.metadata,
+      distance: result.distance,
+      similarity: result.similarity,
+      score: result.finalScore
+    }));
+  }
+
+  /**
+   * Enhanced email search with better filtering for sender + content queries
+   * @param {string} query - Search query
+   * @param {string} userID - User ID for data isolation (required)
+   * @param {number} topK - Number of results to return
+   * @param {Object} filters - Search filters
+   * @returns {Promise<Array>} - Search results
+   */
+  async searchEmailsWithEnhancedFiltering(query, userID, topK = 5, filters = {}) {
+    try {
+      if (!userID) {
+        throw new Error('userID is required for email data isolation');
+      }
+
+      // Get user-specific collection
+      const collection = await this.initializeUserCollection(userID);
+
+      console.log(`🔍 Enhanced search for user ${userID}: "${query}" with filters:`, filters);
+
+      // Generate query embedding
+      const queryEmbedding = await vextService.embedText(query);
+
+      // Prepare ChromaDB filters
+      const chromaFilters = {
+        document_type: 'email',
+        ...filters
+      };
+
+      // Use larger search limit for better filtering
+      const searchLimit = Math.max(topK * 5, 50);
+
+      // Search in user-specific collection
+      const results = await collection.query({
+        queryEmbeddings: [queryEmbedding],
+        nResults: searchLimit,
+        where: chromaFilters
+      });
+
+      // Format results
+      const formattedResults = results.ids[0].map((id, index) => {
+        const distance = results.distances[0][index];
+        const similarity = 1 - distance;
+        
+        return {
+          id: id,
+          text: results.documents[0][index],
+          metadata: results.metadatas[0][index],
+          distance: distance,
+          similarity: similarity,
+          score: similarity
+        };
+      });
+
+      // Apply enhanced content filtering
+      const filteredResults = this.filterByContentRelevance(formattedResults, query, topK);
+
+      console.log(`✅ Enhanced search found ${filteredResults.length} relevant emails for user: ${userID}`);
+      return filteredResults;
+    } catch (error) {
+      console.error(`❌ Error in enhanced email search for user ${userID}:`, error);
       throw new Error(`Failed to search emails for user ${userID}: ${error.message}`);
     }
   }
@@ -408,17 +545,15 @@ class EmailVectorService {
       const emails = await this.getAllEmails(userID);
       
       if (emails.length === 0) {
-        console.log(`📭 No emails to clear for user: ${userID}`);
+        console.log(`📭 No emails found to clear for user: ${userID}`);
         return true;
       }
 
-      // Delete all emails for this user
+      // Delete all emails
       const emailIds = emails.map(email => email.id);
-      await collection.delete({
-        ids: emailIds
-      });
+      await collection.delete({ ids: emailIds });
 
-      console.log(`✅ Successfully cleared ${emailIds.length} emails for user: ${userID}`);
+      console.log(`✅ Successfully cleared ${emails.length} emails for user: ${userID}`);
       return true;
     } catch (error) {
       console.error(`❌ Error clearing emails for user ${userID}:`, error);
@@ -427,136 +562,36 @@ class EmailVectorService {
   }
 
   /**
-   * Validate and clean email documents
-   * @param {Array} emailDocuments - Email documents to validate
-   * @param {string} userID - User ID for data isolation
-   * @returns {Array} - Cleaned email documents
-   */
-  validateAndCleanEmailDocuments(emailDocuments, userID) {
-    return emailDocuments.map((doc, index) => {
-      // Validate document structure
-      if (!doc || typeof doc !== 'object') {
-        throw new Error(`Invalid email document at index ${index}: must be an object`);
-      }
-
-      if (!doc.text || typeof doc.text !== 'string') {
-        throw new Error(`Invalid text at index ${index}: must be a non-empty string`);
-      }
-
-      if (!doc.metadata || typeof doc.metadata !== 'object') {
-        throw new Error(`Invalid metadata at index ${index}: must be an object`);
-      }
-
-      // Clean and validate text
-      let cleanedText = doc.text.trim();
-      if (cleanedText.length === 0) {
-        cleanedText = '[Empty email content]';
-      }
-
-      // Limit text length
-      if (cleanedText.length > 100000) {
-        console.warn(`⚠️ Truncating long email text at index ${index} (${cleanedText.length} chars)`);
-        cleanedText = cleanedText.substring(0, 100000);
-      }
-
-      // Ensure required metadata fields
-      const metadata = {
-        ...doc.metadata,
-        document_type: 'email'
-      };
-
-      // Ensure userID is present for data isolation
-      if (!metadata.userID && userID) {
-        metadata.userID = userID;
-      }
-
-      // Ensure email_id exists
-      if (!metadata.email_id) {
-        metadata.email_id = `email_${index}_${Date.now()}`;
-      }
-
-      // Ensure document_id exists
-      if (!metadata.document_id) {
-        metadata.document_id = uuidv4();
-      }
-
-      return {
-        text: cleanedText,
-        metadata: metadata
-      };
-    });
-  }
-
-  /**
-   * Generate embeddings in batches
-   * @param {Array<string>} texts - Texts to embed
-   * @param {number} batchSize - Batch size
-   * @returns {Promise<Array>} - Embeddings
-   */
-  async generateEmbeddingsInBatches(texts, batchSize = 50) {
-    const allEmbeddings = [];
-    
-    for (let i = 0; i < texts.length; i += batchSize) {
-      const batch = texts.slice(i, i + batchSize);
-      const batchNumber = Math.floor(i / batchSize) + 1;
-      const totalBatches = Math.ceil(texts.length / batchSize);
-      
-      console.log(`🔄 Processing email embedding batch ${batchNumber}/${totalBatches} (${batch.length} items)...`);
-      
-      try {
-        const batchEmbeddings = await vextService.generateEmbeddings(batch);
-        allEmbeddings.push(...batchEmbeddings);
-        
-        // Small delay between batches
-        if (i + batchSize < texts.length) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-      } catch (error) {
-        console.error(`❌ Failed to generate embeddings for email batch ${batchNumber}:`, error);
-        throw new Error(`Email embedding generation failed at batch ${batchNumber}: ${error.message}`);
-      }
-    }
-    
-    return allEmbeddings;
-  }
-
-  /**
-   * Check email vector database health
+   * Check ChromaDB connection health
    * @returns {Promise<Object>} - Health status
    */
   async checkHealth() {
     try {
-      console.log('🔍 Checking email vector database health...');
+      console.log('🔍 Checking email vector service health...');
       
       // Test basic connection
       const collections = await this.client.listCollections();
-      console.log(`✅ Email vector database connection healthy`);
-      
-      // Count email collections (user-specific collections)
-      const emailCollections = collections.filter(col => 
-        col && col.name && col.name.startsWith(this.baseCollectionName)
-      );
+      console.log(`✅ ChromaDB connection healthy. Found ${collections.length} collections`);
       
       return {
         healthy: true,
-        totalCollections: collections.length,
-        emailCollections: emailCollections.length,
-        baseCollectionName: this.baseCollectionName,
-        userCollectionPattern: `${this.baseCollectionName}_[userID]`,
+        collections: collections.length,
+        service: 'EmailVectorService',
         timestamp: new Date().toISOString()
       };
     } catch (error) {
-      console.error('❌ Email vector database health check failed:', error);
+      console.error('❌ Email vector service health check failed:', error);
       return {
         healthy: false,
         error: error.message,
+        service: 'EmailVectorService',
         timestamp: new Date().toISOString()
       };
     }
   }
 
   /**
-   * Advanced email search with multiple criteria
+   * Advanced email search with comprehensive filtering
    * @param {Object} searchParams - Search parameters
    * @param {string} userID - User ID for data isolation (required)
    * @returns {Promise<Array>} - Search results
@@ -567,73 +602,67 @@ class EmailVectorService {
         throw new Error('userID is required for email data isolation');
       }
 
-      const {
-        query,
-        sender_email,
-        sender_domain,
-        date_from,
-        date_to,
-        has_attachments,
-        subject_contains,
-        topK = 10
-      } = searchParams;
+      const { query, topK = 10, filters = {} } = searchParams;
 
-      let filters = {};
+      console.log(`🔍 Advanced email search for user ${userID}: "${query}" with filters:`, filters);
 
-      // Add filters based on parameters
-      if (sender_email) {
-        filters.sender_email = sender_email;
-      }
-
-      if (sender_domain) {
-        filters.sender_domain = sender_domain;
-      }
-
-      if (has_attachments !== undefined) {
-        filters.has_attachments = has_attachments;
-      }
-
-      // For date filtering, we might need to implement custom logic
-      // as ChromaDB's filtering capabilities vary
-
-      // Perform the search
-      const results = await this.searchEmails(query, userID, topK, filters);
-
-      // Additional client-side filtering if needed
-      let filteredResults = results;
-
-      // Filter by subject if specified
-      if (subject_contains) {
-        filteredResults = filteredResults.filter(email => 
-          email.metadata.subject && 
-          email.metadata.subject.toLowerCase().includes(subject_contains.toLowerCase())
-        );
-      }
-
-      // Filter by date range if specified
-      if (date_from || date_to) {
-        filteredResults = filteredResults.filter(email => {
-          const emailDate = new Date(email.metadata.time_received);
-          let matchesRange = true;
-
-          if (date_from) {
-            matchesRange = matchesRange && emailDate >= new Date(date_from);
-          }
-
-          if (date_to) {
-            matchesRange = matchesRange && emailDate <= new Date(date_to);
-          }
-
-          return matchesRange;
-        });
-      }
-
-      console.log(`🔍 Advanced search found ${filteredResults.length} emails for user: ${userID}`);
-      return filteredResults;
+      // Use enhanced filtering for better results
+      return await this.searchEmailsWithEnhancedFiltering(query, userID, topK, filters);
     } catch (error) {
       console.error(`❌ Error in advanced email search for user ${userID}:`, error);
-      throw new Error(`Advanced email search failed for user ${userID}: ${error.message}`);
+      throw new Error(`Failed to perform advanced email search for user ${userID}: ${error.message}`);
     }
+  }
+
+  /**
+   * Generate embeddings in batches to avoid memory issues
+   * @param {Array<string>} texts - Array of text strings
+   * @returns {Promise<Array<Array<number>>>} - Array of embeddings
+   */
+  async generateEmbeddingsInBatches(texts) {
+    try {
+      const batchSize = 10; // Process in smaller batches
+      const embeddings = [];
+
+      for (let i = 0; i < texts.length; i += batchSize) {
+        const batch = texts.slice(i, i + batchSize);
+        console.log(`🔄 Generating embeddings for batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(texts.length / batchSize)} (${batch.length} texts)...`);
+        
+        const batchEmbeddings = await vextService.generateEmbeddings(batch);
+        embeddings.push(...batchEmbeddings);
+      }
+
+      console.log(`✅ Successfully generated ${embeddings.length} embeddings`);
+      return embeddings;
+    } catch (error) {
+      console.error('❌ Error generating embeddings:', error);
+      throw new Error(`Failed to generate embeddings: ${error.message}`);
+    }
+  }
+
+  /**
+   * Validate and clean email documents
+   * @param {Array<Object>} emailDocuments - Email documents to validate
+   * @param {string} userID - User ID for data isolation
+   * @returns {Array<Object>} - Cleaned email documents
+   */
+  validateAndCleanEmailDocuments(emailDocuments, userID) {
+    return emailDocuments.map(doc => {
+      // Ensure userID is included in metadata
+      const cleanedMetadata = {
+        ...doc.metadata,
+        userID: userID,
+        document_type: 'email'
+      };
+
+      // Ensure text content exists
+      const text = doc.text || doc.metadata.body || doc.metadata.subject || '';
+
+      return {
+        text: text,
+        metadata: cleanedMetadata
+      };
+    });
   }
 }
 

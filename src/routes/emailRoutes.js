@@ -132,8 +132,14 @@ router.post('/query', async (req, res) => {
         ...filters
       }, userID);
     } else {
-      // Use basic semantic search
-      searchResults = await emailVectorService.searchEmails(query, userID, topK, filters);
+      // Use enhanced filtering when sender filter is applied
+      if (filters.sender_email) {
+        console.log(`🔍 Using enhanced filtering for sender-specific query`);
+        searchResults = await emailVectorService.searchEmailsWithEnhancedFiltering(query, userID, topK, filters);
+      } else {
+        // Use basic semantic search
+        searchResults = await emailVectorService.searchEmails(query, userID, topK, filters);
+      }
     }
 
     console.log(`📧 Found ${searchResults.length} relevant emails`);
@@ -152,7 +158,7 @@ router.post('/query', async (req, res) => {
       });
     }
 
-    // Prepare context for AI
+    // Prepare context for AI with enhanced filtering information
     const emailContext = searchResults.map(email => ({
       text: email.text,
       metadata: email.metadata,
@@ -161,7 +167,13 @@ router.post('/query', async (req, res) => {
 
     // Generate AI response based on email context
     console.log('🤖 Generating AI response...');
-    const aiResponse = await aiService.generateAnswer(query, emailContext, {
+    
+    // Add context about filtering to help AI provide better responses
+    const enhancedQuery = filters.sender_email ? 
+      `${query} (Note: Only include emails that actually contain the requested content, not just emails from the specified sender)` :
+      query;
+    
+    const aiResponse = await aiService.generateAnswer(enhancedQuery, emailContext, {
       temperature,
       maxTokens: 5000
     });

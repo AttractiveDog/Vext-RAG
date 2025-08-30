@@ -43,20 +43,28 @@ class AIService {
       
       console.log(`📊 Context stats: ${context.length} documents -> ${truncatedContext.documents.length} documents (${truncatedContext.estimatedTokens} estimated tokens)`);
 
+      // Check if this is an email query by looking at context metadata
+      const isEmailQuery = this.isEmailQuery(context);
+      
       // Check if question is about tables, charts, or structured data
       const isStructuredDataQuestion = this.isStructuredDataQuestion(question);
       
-      // Prepare context text with enhanced formatting for structured data
-      const contextText = this.formatContextForAI(truncatedContext.documents, isStructuredDataQuestion);
+      // Prepare context text with appropriate formatting
+      const contextText = this.formatContextForAI(truncatedContext.documents, isStructuredDataQuestion, isEmailQuery);
 
-      // Create specialized prompt for structured data questions
-      const systemPrompt = isStructuredDataQuestion ? 
-        this.getStructuredDataSystemPrompt(contextText) :
-        this.getStandardSystemPrompt(contextText);
-
-      const userPrompt = isStructuredDataQuestion ?
-        this.getStructuredDataUserPrompt(question) :
-        this.getStandardUserPrompt(question);
+      // Create specialized prompts based on query type
+      let systemPrompt, userPrompt;
+      
+      if (isEmailQuery) {
+        systemPrompt = this.getEmailSystemPrompt(contextText);
+        userPrompt = this.getEmailUserPrompt(question);
+      } else if (isStructuredDataQuestion) {
+        systemPrompt = this.getStructuredDataSystemPrompt(contextText);
+        userPrompt = this.getStructuredDataUserPrompt(question);
+      } else {
+        systemPrompt = this.getStandardSystemPrompt(contextText);
+        userPrompt = this.getStandardUserPrompt(question);
+      }
 
       // Generate response using Groq with retry logic for rate limits
       const groq = this._initGroq();
@@ -99,7 +107,8 @@ class AIService {
         contextTruncated: truncatedContext.wasTruncated,
         documentsUsed: truncatedContext.documents.length,
         totalDocumentsAvailable: context.length,
-        isStructuredDataQuestion
+        isStructuredDataQuestion,
+        isEmailQuery
       };
     } catch (error) {
       console.error('Error generating answer:', error);
@@ -284,12 +293,31 @@ Answer:`;
   }
 
   /**
+   * Check if the context contains email data
+   * @param {Array<{text: string, metadata: Object}>} context - Retrieved context
+   * @returns {boolean} - True if context contains email data
+   */
+  isEmailQuery(context) {
+    if (!context || context.length === 0) return false;
+    
+    // Check if any document in the context has email-specific metadata
+    return context.some(doc => {
+      const metadata = doc.metadata || {};
+      return metadata.document_type === 'email' || 
+             metadata.sender_email || 
+             metadata.receiver_emails || 
+             metadata.subject ||
+             metadata.email_id;
+    });
+  }
+
+  /**
    * Format context specifically for structured data questions
    * @param {Array<{text: string, metadata: Object}>} documents - Documents to format
    * @param {boolean} isStructuredDataQuestion - Whether this is a structured data question
    * @returns {string} - Formatted context text
    */
-  formatContextForAI(documents, isStructuredDataQuestion) {
+  formatContextForAI(documents, isStructuredDataQuestion, isEmailQuery = false) {
     if (isStructuredDataQuestion) {
       return documents.map((doc, index) => {
         let formattedText = `=== Document ${index + 1} ===\n`;
@@ -337,6 +365,17 @@ Answer:`;
         formattedText += `Metadata: ${JSON.stringify(doc.metadata || {}, null, 2)}\n---\n\n`;
         return formattedText;
       }).join('\n');
+    } else if (isEmailQuery) {
+      // Email-specific formatting without document numbers
+      return documents.map((doc, index) => 
+        `=== Email ${index + 1} ===
+From: ${doc.metadata?.sender_email || 'Unknown'}
+To: ${doc.metadata?.receiver_emails || 'Unknown'}
+Subject: ${doc.metadata?.subject || 'No Subject'}
+Date: ${doc.metadata?.time_received || 'Unknown'}
+Content: ${doc.text}
+---`
+      ).join('\n\n');
     } else {
       // Standard formatting for non-structured data questions
       return documents.map((doc, index) => 
@@ -382,6 +421,44 @@ Please analyze the structured data and answer the following question. If you fin
   }
 
   /**
+   * Get email-specific system prompt
+   * @param {string} contextText - Formatted context text
+   * @returns {string} - System prompt
+   */
+  getEmailSystemPrompt(contextText) {
+    return `You are a helpful AI assistant that answers questions about emails based on the provided context. 
+
+IMPORTANT INSTRUCTIONS:
+- You MUST use information from the provided emails to answer questions
+- If the emails contain relevant information, even if it's not a perfect match, use it to provide a helpful answer
+- Look for related terms, synonyms, or broader categories that might answer the question
+- Only say "I couldn't find any emails matching your query" if you've thoroughly searched and found absolutely nothing relevant
+- Provide natural, conversational responses without mentioning document numbers or technical references
+- Focus on the content and meaning of the emails rather than technical details
+
+EMAIL-SPECIFIC INSTRUCTIONS:
+- When filtering by sender, ONLY mention emails that actually contain the requested content
+- If an email is from the specified sender but doesn't contain the requested content, DO NOT include it in your response
+- Be explicit about which emails are relevant vs. which are not when filtering by sender
+- If you find emails that don't contain the requested content, clearly state this
+- Focus on emails that have both the correct sender AND the requested content
+- When asked about specific topics (like "RFP"), only include emails that actually mention or discuss that topic
+- Provide natural summaries of email content without technical formatting
+
+Guidelines:
+- Provide accurate and relevant answers based on the email context
+- Be concise but comprehensive
+- If you're unsure about something, acknowledge the uncertainty but still provide what you can from the emails
+- Look for indirect answers - if someone asks about one topic but emails discuss related topics, use that information
+- Write in a natural, conversational tone as if you're summarizing emails for a colleague
+
+Context:
+${contextText}
+
+Please answer the following question based on the email context provided. Provide a natural, conversational response:`;
+  }
+
+  /**
    * Get standard system prompt for regular questions
    * @param {string} contextText - Formatted context text
    * @returns {string} - System prompt
@@ -400,6 +477,14 @@ IMPORTANT INSTRUCTIONS:
 - If someone asks about "executive AI" but you find "AI-powered meeting assistant" or "meeting bot" pricing, use that information and explain the connection
 - If someone asks about pricing but you find cost information for similar services, use that as a reference point
 - When you find pricing information, always mention the specific product/service name from the context and explain how it relates to the question
+
+EMAIL-SPECIFIC INSTRUCTIONS:
+- When filtering by sender, ONLY mention emails that actually contain the requested content
+- If an email is from the specified sender but doesn't contain the requested content, DO NOT include it in your response
+- Be explicit about which emails are relevant vs. which are not when filtering by sender
+- If you find emails that don't contain the requested content, clearly state this
+- Focus on emails that have both the correct sender AND the requested content
+- When asked about specific topics (like "RFP"), only include emails that actually mention or discuss that topic
 
 Guidelines:
 - Provide accurate and relevant answers based on the context
@@ -436,6 +521,21 @@ Please provide a detailed analysis using the structured data from the provided c
   }
 
   /**
+   * Get email-specific user prompt
+   * @param {string} question - User's question
+   * @returns {string} - User prompt
+   */
+  getEmailUserPrompt(question) {
+    return `Question: ${question}
+
+Please provide a natural, conversational answer about the emails based on the provided context. Focus on the content and meaning of the emails rather than technical details.
+
+For email filtering: If the question asks for emails from a specific sender about a specific topic, only include emails that contain both the sender AND the topic content. Do not include emails that are from the sender but don't contain the requested content.
+
+Provide a helpful summary of the relevant email information in a conversational tone.`;
+  }
+
+  /**
    * Get standard user prompt for regular questions
    * @param {string} question - User's question
    * @returns {string} - User prompt
@@ -445,7 +545,9 @@ Please provide a detailed analysis using the structured data from the provided c
 
 Please provide a detailed answer using the information from the provided context. If you find relevant information, even if it's not an exact match, use it and cite the specific document number(s).
 
-For pricing questions: If the exact product name isn't found but you see pricing for similar services (like "meeting bot" when asked about "executive AI"), use that information and explain the connection.`;
+For pricing questions: If the exact product name isn't found but you see pricing for similar services (like "meeting bot" when asked about "executive AI"), use that information and explain the connection.
+
+For email filtering: If the question asks for emails from a specific sender about a specific topic, only include emails that contain both the sender AND the topic content. Do not include emails that are from the sender but don't contain the requested content.`;
   }
 
   /**

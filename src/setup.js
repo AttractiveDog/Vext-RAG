@@ -1,14 +1,16 @@
+import dotenv from 'dotenv';
+
+// Load environment variables FIRST
+dotenv.config();
+
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import dotenv from 'dotenv';
 import vextService from './services/vextService.js';
 import vectorService from './services/vectorService.js';
 import aiService from './services/aiService.js';
 
-// Load environment variables
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
