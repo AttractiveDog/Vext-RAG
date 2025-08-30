@@ -151,6 +151,35 @@
             100% { transform: rotate(360deg); }
         }
 
+        .progress-container {
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+
+        .progress-container h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .progress-container p {
+            margin: 0 0 10px 0;
+            color: #555;
+        }
+
+        .result.warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .result.info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+
         .error {
             background: #fee;
             border-left-color: #e74c3c;
@@ -546,30 +575,35 @@
                 }
             }
 
-            showLoading(resultDiv);
+            // Show initial loading state
+            showLoading(resultDiv, 'Starting document upload...');
+
+            let eventSource = null;
+            let uploadController = null;
 
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutes timeout
-                
-                const response = await fetch(`${API_BASE}/ingest`, {
+                // Start the upload
+                uploadController = new AbortController();
+                const uploadResponse = await fetch(`${API_BASE}/ingest`, {
                     method: 'POST',
                     body: formData,
-                    signal: controller.signal
+                    signal: uploadController.signal
                 });
-                
-                clearTimeout(timeoutId);
 
-                const result = await response.json();
+                const result = await uploadResponse.json();
 
                 if (result.success) {
-                    showResult(resultDiv, 
-                        `Document uploaded successfully! Created ${result.data.totalChunks} chunks.`, 
-                        'success'
-                    );
-                    fileInput.value = '';
-                    metadataInput.value = '';
-                    document.querySelector('.file-upload p').textContent = 'Click to select or drag and drop files here';
+                    // Upload started successfully, now track progress via SSE
+                    if (result.jobId) {
+                        trackUploadProgress(result.jobId, resultDiv, fileInput, metadataInput);
+                    } else {
+                        // Fallback for backward compatibility
+                        showResult(resultDiv, 
+                            `Document uploaded successfully! Created ${result.data.totalChunks} chunks.`, 
+                            'success'
+                        );
+                        resetFileInput(fileInput, metadataInput);
+                    }
                 } else {
                     showResult(resultDiv, `Upload failed: ${result.error}`, 'error');
                 }
@@ -580,6 +614,124 @@
                     showResult(resultDiv, `Upload failed: ${error.message}`, 'error');
                 }
             }
+        }
+
+        function trackUploadProgress(jobId, resultDiv, fileInput, metadataInput) {
+            const eventSource = new EventSource(`${API_BASE}/ingest/progress/${jobId}`);
+            
+            eventSource.onopen = function() {
+                console.log('SSE connection opened for progress tracking');
+            };
+
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    switch (data.type) {
+                        case 'connected':
+                            console.log('Connected to progress stream');
+                            break;
+                            
+                        case 'progress':
+                            updateProgressDisplay(data.progress, resultDiv);
+                            break;
+                            
+                        case 'keepalive':
+                            // Keep connection alive - no UI update needed
+                            break;
+                            
+                        default:
+                            console.log('Unknown SSE event type:', data.type);
+                    }
+                } catch (error) {
+                    console.error('Error parsing SSE data:', error);
+                }
+            };
+
+            eventSource.onerror = function(error) {
+                console.error('SSE connection error:', error);
+                eventSource.close();
+                showResult(resultDiv, 'Lost connection to progress stream. Document may still be processing.', 'warning');
+            };
+
+            // Handle completion or error
+            const checkCompletion = setInterval(async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/ingest/status/${jobId}`);
+                    const status = await response.json();
+                    
+                    if (status.completed) {
+                        clearInterval(checkCompletion);
+                        eventSource.close();
+                        
+                        if (status.success) {
+                            showResult(resultDiv, 
+                                `Document uploaded successfully! Created ${status.data.totalChunks} chunks.`, 
+                                'success'
+                            );
+                            resetFileInput(fileInput, metadataInput);
+                        } else {
+                            showResult(resultDiv, `Upload failed: ${status.error}`, 'error');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking completion status:', error);
+                }
+            }, 5000); // Check every 5 seconds
+
+            // Cleanup after 10 minutes
+            setTimeout(() => {
+                clearInterval(checkCompletion);
+                eventSource.close();
+            }, 600000);
+        }
+
+        function updateProgressDisplay(progress, resultDiv) {
+            const { stage, message, progress: percent, filename, totalChunks, error, warning } = progress;
+            
+            let statusClass = 'info';
+            if (error) statusClass = 'error';
+            else if (warning) statusClass = 'warning';
+            else if (stage === 'complete') statusClass = 'success';
+            
+            let progressBar = '';
+            if (percent > 0 && percent < 100) {
+                progressBar = `
+                    <div style="margin: 10px 0;">
+                        <div style="background: #e0e0e0; border-radius: 10px; height: 20px; overflow: hidden;">
+                            <div style="background: linear-gradient(90deg, #4CAF50, #45a049); height: 100%; width: ${percent}%; transition: width 0.3s ease;"></div>
+                        </div>
+                        <div style="text-align: center; margin-top: 5px; font-size: 12px; color: #666;">
+                            ${percent}% complete
+                        </div>
+                    </div>
+                `;
+            }
+            
+            let additionalInfo = '';
+            if (totalChunks) {
+                additionalInfo = `<br><small>Processing ${totalChunks} chunks...</small>`;
+            }
+            
+            const html = `
+                <div class="progress-container">
+                    <h4>📄 Processing: ${filename}</h4>
+                    <p><strong>${message}</strong>${additionalInfo}</p>
+                    ${progressBar}
+                    <div style="font-size: 12px; color: #666; margin-top: 10px;">
+                        Stage: ${stage.charAt(0).toUpperCase() + stage.slice(1)}
+                    </div>
+                </div>
+            `;
+            
+            resultDiv.innerHTML = html;
+            resultDiv.className = `result ${statusClass}`;
+        }
+
+        function resetFileInput(fileInput, metadataInput) {
+            fileInput.value = '';
+            metadataInput.value = '';
+            document.querySelector('.file-upload p').textContent = 'Click to select or drag and drop files here';
         }
 
         async function askQuestion() {
@@ -813,11 +965,11 @@
             }
         }
 
-        function showLoading(element) {
+        function showLoading(element, message = 'Loading...') {
             element.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
-                    <p>Loading...</p>
+                    <p>${message}</p>
                 </div>
             `;
         }
