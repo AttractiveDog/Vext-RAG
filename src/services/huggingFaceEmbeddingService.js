@@ -6,7 +6,7 @@ class HuggingFaceEmbeddingService {
     this.modelName = 'Xenova/all-MiniLM-L6-v2';
     this.dimensions = 384; // all-MiniLM-L6-v2 produces 384-dimensional embeddings
     this.maxRetries = 3;
-    this.batchSize = 16; // Optimized batch size for performance and memory balance
+    this.batchSize = 10; // Optimized batch size for performance and memory balance
     this.isEC2 = process.env.EC2_INSTANCE || process.env.AWS_REGION || false;
     this.memoryThresholdMB = 1200; // Memory threshold for cleanup (1.2GB)
     this.consecutiveMemoryChecks = 0;
